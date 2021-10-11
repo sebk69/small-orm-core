@@ -1,5 +1,5 @@
 {
-  "name": "sebk/small-orm-bundle",
+  "name": "sebk/small-orm-core",
   "licence": "GPL-3.0-only",
   "type": "library",
   "autoload": {
