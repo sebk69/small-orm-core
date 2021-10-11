@@ -1,0 +1,14 @@
+{
+  "name": "sebk/small-orm-bundle",
+  "licence": "GPL-3.0-only",
+  "type": "library",
+  "autoload": {
+    "psr-4": { "Sebk\\SmallOrmCore\\": "" }
+  },
+  "authors": [
+    {
+      "name": "Sébastien Kus",
+      "email": "seb@small-iceberg.dev"
+    }
+  ]
+}
