@@ -74,7 +74,7 @@ class Layers
             $this->loadBundleLayers($bundle);
 
             // Unset already executed layers
-            if(is_array($this->layers[$bundle])) {
+            if(isset($this->layers[$bundle]) && is_array($this->layers[$bundle])) {
                 foreach ($this->layers[$bundle] as $key => $layer) {
                     if (isset($executed[$bundle][$layer->getName()])) {
                         unset($this->layers[$bundle][$key]);
