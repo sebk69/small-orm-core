@@ -280,13 +280,22 @@ class Dao
         $nameSpaceParts = explode("\\", $fullClassName);
 
         // create relative path to file
-        if($nameSpaceParts[0] != "App") {
-            unset($nameSpaceParts[0]);
-            unset($nameSpaceParts[1]);
+        if (!property_exists($this->container->get("kernel"), "swoft")) {
+            if ($nameSpaceParts[0] != "App") {
+                unset($nameSpaceParts[0]);
+                unset($nameSpaceParts[1]);
+            } else {
+                unset($nameSpaceParts[0]);
+                unset($nameSpaceParts[1]);
+                //unset($nameSpaceParts[2]);
+            }
         } else {
-            unset($nameSpaceParts[0]);
-            unset($nameSpaceParts[1]);
-            //unset($nameSpaceParts[2]);
+            foreach ($nameSpaceParts as $i => $part) {
+                unset($nameSpaceParts[$i]);
+                if ($part == $bundle) {
+                    break;
+                }
+            }
         }
         $relativePath = "";
         foreach($nameSpaceParts as $nameSpacePart) {
