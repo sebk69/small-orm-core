@@ -400,7 +400,7 @@ abstract class AbstractDao {
      * @param string $alias
      * @return array
      */
-    protected function buildResult(QueryBuilder $query, $records, $alias = null, $asCollection, $groupByModels = false) {
+    protected function buildResult(QueryBuilder $query, $records, $alias = null, $asCollection = false, $groupByModels = false) {
         if ($alias === null) {
             $alias = $query->getRelation()->getAlias();
         }
