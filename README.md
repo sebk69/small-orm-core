@@ -1,13 +1,14 @@
-# SmallOrmCore
-SmallOrm is a small php ORM.
+# sebk/small-orm-core
+Small ORM is a small php ORM.
 
-The package is the core of SmallOrm.
+This package is the core of Small ORM.
 
-A symfony bundle for SmallOrm is available here : https://github.com/sebk69/SebkSmallOrmBundle
+A Symfony bundle for Small ORM is available here : https://github.com/sebk69/SebkSmallOrmBundle
+A Swoft package for Small ORM is available here : https://github.com/sebk69/small-orm-swoft
 
 ## Install
 
-Require the bundle with composer:
+Require the package with composer:
 ```
-composer require sebk/small-core-bundle
+composer require sebk/small-orm-core
 ```
