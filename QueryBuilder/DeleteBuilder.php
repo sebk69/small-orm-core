@@ -1,6 +1,6 @@
 <?php
 /**
- * This file is a part of SebkSmallOrmCore
+ * This file is a part of sebk/small-orm-core
  * Copyrightt 2021 - Sébastien Kus
  * Under GNU GPL V3 licence
  */
@@ -29,7 +29,7 @@ class DeleteBuilder
 
         $this->from = new FromBuilder($baseDao, $baseAlias);
     }
-    
+
     public function __clone() {
         $this->from = clone $this->from;
         $this->where = clone $this->where;

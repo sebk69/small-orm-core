@@ -1,9 +1,8 @@
 <?php
 /**
- * Created by PhpStorm.
- * User: seb
- * Date: 13/07/17
- * Time: 23:00
+ * This file is a part of sebk/small-orm-core
+ * Copyright 2021 - Sébastien Kus
+ * Under GNU GPL V3 licence
  */
 
 namespace Sebk\SmallOrmCore\Layers;

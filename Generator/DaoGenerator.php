@@ -1,6 +1,6 @@
 <?php
 /**
- * This file is a part of SebkSmallOrmCore
+ * This file is a part of sebk/small-orm-core
  * Copyright 2021 - Sébastien Kus
  * Under GNU GPL V3 licence
  */
@@ -12,7 +12,7 @@ use Sebk\SmallOrmCore\Dao\AbstractDao;
 use Sebk\SmallOrmCore\Dao\DaoException;
 use Sebk\SmallOrmCore\Dao\Field;
 use Sebk\SmallOrmCore\Dao\ToOneRelation;
-use Sebk\SmallOrmCore\Database\Connection;
+use Sebk\SmallOrmCore\Database\ConnectionMysql;
 use Sebk\SmallOrmCore\Factory\Connections;
 use Sebk\SmallOrmCore\Factory\Dao;
 use Sebk\SmallOrmCore\Factory\DaoNotFoundException;

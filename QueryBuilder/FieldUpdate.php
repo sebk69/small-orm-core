@@ -1,6 +1,6 @@
 <?php
 /**
- * This file is a part of SebkSmallOrmCore
+ * This file is a part of sebk/small-orm-core
  * Copyright 2021 - Sébastien Kus
  * Under GNU GPL V3 licence
  */
@@ -34,8 +34,8 @@ class FieldUpdate
         $this->typeUpdate    = $this->getVarType($update);
         $this->update = $update;
     }
-    
-    public function __clone() 
+
+    public function __clone()
     {
         if($this->getVarType(static::TYPE_SUBQUERYY)) {
             $this->update = clone $this->update;

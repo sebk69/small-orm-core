@@ -1,13 +1,14 @@
 <?php
 /**
- * This file is a part of SebkSmallOrmCore
+ * This file is a part of sebk/small-orm-core
  * Copyright 2021 - Sébastien Kus
  * Under GNU GPL V3 licence
  */
 
 namespace Sebk\SmallOrmCore\Factory;
 
-use Sebk\SmallOrmCore\Database\Connection;
+use Sebk\SmallOrmCore\Database\ConnectionException;
+use Sebk\SmallOrmCore\Database\ConnectionMysql;
 
 /**
  * Factory for connections
@@ -15,6 +16,10 @@ use Sebk\SmallOrmCore\Database\Connection;
  */
 class Connections
 {
+    public static $namespaces = [
+        '\Sebk\SmallOrmCore\Database\\',
+    ];
+
     public $config;
     public $defaultConnection;
     public static $connections = array();
@@ -33,7 +38,7 @@ class Connections
     /**
      * Get a connection
      * @param type $connectionName
-     * @return Connection
+     * @return ConnectionMysql
      * @throws ConfigurationException
      */
     public function get($connectionName = 'default')
@@ -47,12 +52,35 @@ class Connections
         }
 
         if (!isset(static::$connections[$connectionName])) {
-            $connectionConfig                     = $this->config[$connectionName];
-            static::$connections[$connectionName] = new Connection(
+            // Get config for connection
+            $connectionConfig = $this->config[$connectionName];
+
+            // Get connection class name
+            $typeExploded = explode("-", $connectionConfig['type']);
+            $decomposedClass = [];
+            foreach ($typeExploded as $item) {
+                $decomposedClass[] = ucfirst($item);
+            }
+
+            foreach (static::$namespaces as $namespace) {
+                $class = $namespace . 'Connection' . implode("", $decomposedClass);
+                if (class_exists($class)) {
+                    break;
+                }
+            }
+
+            // Check connection type exists
+            if (!class_exists($class)) {
+                throw new ConnectionException("The connection type '" . $connectionConfig['type'] . "' does not exists ($class)");
+            }
+
+            // Create instance
+            static::$connections[$connectionName] = new $class(
                 $connectionConfig['type'], $connectionConfig['host'],
                 $connectionConfig['database'], $connectionConfig['user'],
                 $connectionConfig['password'],
-                $connectionConfig['encoding']
+                $connectionConfig['encoding'],
+                isset($connectionConfig['tryCreateDatabase']) ?? $connectionConfig['tryCreateDatabase']
             );
         }
 

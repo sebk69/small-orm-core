@@ -1,5 +1,11 @@
 <?php
 
+/**
+ * This file is a part of sebk/small-orm-core
+ * Copyright 2021 - Sébastien Kus
+ * Under GNU GPL V3 licence
+ */
+
 namespace Sebk\SmallOrmCore\Validator;
 
 use Sebk\SmallOrmCore\Factory\Dao;
@@ -23,7 +29,7 @@ abstract class AbstractValidator
     }
 
     /**
-     * 
+     *
      * @param type $property
      * @param type $table
      * @param type $idTable
@@ -60,7 +66,7 @@ abstract class AbstractValidator
         if ($this->model->$method() !== null && trim($this->model->$method()) != "") {
             return true;
         }
-        
+
         return false;
     }
 
@@ -83,7 +89,7 @@ abstract class AbstractValidator
         $dao      = $this->daoFactory->get($this->model->getBundle(),
             $this->model->getModelName());
         $creation = !$this->model->fromDb;
-        
+
         $query  = $dao->createQueryBuilder("uniqueTable");
         $where  = $query->where();
         $method = "get".$field;
@@ -107,7 +113,7 @@ abstract class AbstractValidator
             $where->andCondition($query->getFieldForCondition($field), "=",
                 ":".$field);
             $query->setParameter($field, $this->model->$method());
-            
+
             $result = $dao->getResult($query);
         }
 
@@ -161,7 +167,7 @@ abstract class AbstractValidator
 
         return count($result) == 0;
     }
-    
+
     public function testInteger($field)
     {
         $method = "get".$field;

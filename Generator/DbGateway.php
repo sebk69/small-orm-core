@@ -1,6 +1,6 @@
 <?php
 /**
- * This file is a part of SebkSmallOrmCore
+ * This file is a part of sebk/small-orm-core
  * Copyright 2021 - Sébastien Kus
  * Under GNU GPL V3 licence
  */
@@ -8,7 +8,7 @@
 namespace Sebk\SmallOrmCore\Generator;
 
 
-use Sebk\SmallOrmCore\Database\Connection;
+use Sebk\SmallOrmCore\Database\ConnectionMysql;
 
 class DbGateway
 {
@@ -19,9 +19,9 @@ class DbGateway
 
     /**
      * DbGateway constructor.
-     * @param Connection $connection
+     * @param ConnectionMysql $connection
      */
-    public function __construct(Connection $connection)
+    public function __construct(ConnectionMysql $connection)
     {
         // build tables list
         $dbTables = $connection->execute("show tables");

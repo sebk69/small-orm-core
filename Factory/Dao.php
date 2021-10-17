@@ -1,6 +1,6 @@
 <?php
 /**
- * This file is a part of SebkSmallOrmCore
+ * This file is a part of sebk/small-orm-core
  * Copyright 2021 - Sébastien Kus
  * Under GNU GPL V3 licence
  */
@@ -67,7 +67,7 @@ class Dao
      * @throws DaoNotFoundException
      * @throws \ReflectionException
      */
-    public function get(string $bundle, string $model): AbstractDao
+    public function get(string $bundle, string $model, $useConnection = null): AbstractDao
     {
         if (!isset($this->config[$bundle])) {
             throw new ConfigurationException("Bundle '$bundle' is not configured");
@@ -87,22 +87,24 @@ class Dao
             );
         }
 
-        if (isset(static::$loadedDao[$bundle][$model])) {
-            return static::$loadedDao[$bundle][$model];
-        }
-
         foreach ($this->config[$bundle]["connections"] as $connectionName => $connectionsParams) {
-            $className = $connectionsParams["dao_namespace"].'\\'.$model;
-            if (class_exists($className)) {
-                if(!(new \ReflectionClass($className))->isAbstract()) {
-                    static::$loadedDao[$bundle][$model] = new $className($this->connectionFactory->get($connectionName),
-                        $this, $connectionsParams["model_namespace"], $model,
-                        $bundle,
-                        $this->container);
+            if ($connectionName == $useConnection || $useConnection === null) {
+                if (isset(static::$loadedDao[$bundle][$model][$connectionName])) {
+                    return static::$loadedDao[$bundle][$model][$connectionName];
+                }
 
-                    return static::$loadedDao[$bundle][$model];
-                } else {
-                    throw new DaoNotFoundException("Dao of model $model of bundle $bundle is abstract");
+                $className = $connectionsParams["dao_namespace"] . '\\' . $model;
+                if (class_exists($className)) {
+                    if (!(new \ReflectionClass($className))->isAbstract()) {
+                        static::$loadedDao[$bundle][$model][$connectionName] = new $className($this->connectionFactory->get($connectionName),
+                            $this, $connectionsParams["model_namespace"], $model,
+                            $bundle,
+                            $this->container);
+
+                        return static::$loadedDao[$bundle][$model][$connectionName];
+                    } else {
+                        throw new DaoNotFoundException("Dao of model $model of bundle $bundle is abstract");
+                    }
                 }
             }
         }

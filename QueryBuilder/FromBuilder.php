@@ -1,6 +1,6 @@
 <?php
 /**
- * This file is a part of SebkSmallOrmCore
+ * This file is a part of sebk/small-orm-core
  * Copyright 2021 - Sébastien Kus
  * Under GNU GPL V3 licence
  */
@@ -62,7 +62,7 @@ class FromBuilder
         if($withAlias) {
             $result .= " AS ".$this->getFieldAliasForSql($field);
         }
-        
+
         return $result;
     }
 
@@ -116,7 +116,7 @@ class FromBuilder
 
         return $fieldsSelection;
     }
-    
+
     public function getDbFieldFromModelAlias($modelAlias) {
         $fieldsSelection = array();
         foreach ($this->dao->getFields() as $field) {

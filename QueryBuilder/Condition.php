@@ -1,6 +1,6 @@
 <?php
 /**
- * This file is a part of SebkSmallOrmCore
+ * This file is a part of sebk/small-orm-core
  * Copyright 2021 - Sébastien Kus
  * Under GNU GPL V3 licence
  */
@@ -38,7 +38,7 @@ class Condition
         $this->var1     = $var1;
         $this->var2     = $var2;
     }
-    
+
     public function __clone()
     {
         switch($this->type1) {
@@ -46,7 +46,7 @@ class Condition
                 $this->var1 = clone $this->var1;
                 break;
         }
-        
+
         switch($this->type2) {
             case static::TYPE_SUBQUERY:
                 $this->var2 = clone $this->var2;

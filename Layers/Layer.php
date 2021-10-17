@@ -1,6 +1,6 @@
 <?php
 /**
- * This file is a part of SebkSmallOrmCore
+ * This file is a part of sebk/small-orm-core
  * Copyright 2021 - Sébastien Kus
  * Under GNU GPL V3 licence
  */
@@ -210,7 +210,7 @@ class Layer
     {
         // Get scripts directory path
         $scriptsPath = $this->layerRootPath."/".$this->getName()."/scripts";
-        
+
         // scan script directory
         $scriptsDir = scandir($scriptsPath);
         foreach($scriptsDir as $scriptFilename) {

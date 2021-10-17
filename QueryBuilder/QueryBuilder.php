@@ -1,7 +1,7 @@
 <?php
 
 /**
- * This file is a part of SebkSmallOrmCore
+ * This file is a part of sebk/small-orm-core
  * Copyright 2021 - Sébastien Kus
  * Under GNU GPL V3 licence
  */
@@ -199,7 +199,7 @@ class QueryBuilder {
         } else {
             throw new QueryBuilderException("Alias '$modelAlias' is not joined for group by");
         }
-        
+
         $this->groupByOperations[] = new groupByOperation($operation, $modelAlias, $fieldDb, $operationAlias);
 
         return $this;
@@ -342,7 +342,7 @@ class QueryBuilder {
 
         return $this;
     }
-    
+
     /**
      * Replace where by raw where
      * @param string $where
@@ -386,7 +386,7 @@ class QueryBuilder {
         }
 
         $sql .= " " . $this->rawJoin;
-        
+
         if($this->rawWhere !== null) {
             $sql .= " WHERE ".$this->rawWhere;
         } elseif ($this->where !== null && trim($this->where->getSql())) {

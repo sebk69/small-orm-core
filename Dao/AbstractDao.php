@@ -1,14 +1,14 @@
 <?php
 
 /**
- * This file is a part of SebkSmallOrmCore
+ * This file is a part of sebk/small-orm-core
  * Copyright 2021 - Sébastien Kus
  * Under GNU GPL V3 licence
  */
 
 namespace Sebk\SmallOrmCore\Dao;
 
-use Sebk\SmallOrmCore\Database\Connection;
+use Sebk\SmallOrmCore\Database\AbstractConnection;
 use Sebk\SmallOrmCore\Factory\Dao;
 use Sebk\SmallOrmCore\QueryBuilder\QueryBuilder;
 use Sebk\SmallOrmCore\QueryBuilder\UpdateBuilder;
@@ -32,7 +32,7 @@ abstract class AbstractDao {
     private $toMany = array();
     private $defaultValues = array();
 
-    public function __construct(Connection $connection, Dao $daoFactory, $modelNamespace, $modelName, $modelBundle, $container) {
+    public function __construct(AbstractConnection $connection, Dao $daoFactory, $modelNamespace, $modelName, $modelBundle, $container) {
         $this->connection = $connection;
         $this->daoFactory = $daoFactory;
         $this->modelNamespace = $modelNamespace;
@@ -45,7 +45,7 @@ abstract class AbstractDao {
 
     /**
      * Get connection
-     * @return Connection
+     * @return ConnectionMysql
      */
     public function getConnection()
     {
@@ -855,7 +855,7 @@ abstract class AbstractDao {
                 try {
                     $model->$method($value);
                 } catch (ModelException $e) {
-                    
+
                 }
             } else {
                 try {
@@ -895,7 +895,7 @@ abstract class AbstractDao {
     }
 
     /**
-     * 
+     *
      * @param array $conds
      * @return array
      */

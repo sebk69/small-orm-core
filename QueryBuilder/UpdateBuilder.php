@@ -1,6 +1,6 @@
 <?php
 /**
- * This file is a part of SebkSmallOrmCore
+ * This file is a part of sebk/small-orm-core
  * Copyrightt 2021 - Sébastien Kus
  * Under GNU GPL V3 licence
  */
@@ -39,7 +39,7 @@ class UpdateBuilder
 
         $this->where = clone $this->where;
         $this->where->setParent($this);
-        
+
         $fieldsUpdateFrom = $this->fieldsUpdate;
         $this->fieldsUpdate = array();
         foreach($fieldsUpdateFrom as $fieldUpdate) {

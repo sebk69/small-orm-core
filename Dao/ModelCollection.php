@@ -1,6 +1,6 @@
 <?php
 /**
- * This file is a part of SebkSmallOrmCore
+ * This file is a part of sebk/small-orm-core
  * Copyrightt 2021 - Sébastien Kus
  * Under GNU GPL V3 licence
  */
@@ -96,32 +96,32 @@ class ModelCollection implements \IteratorAggregate, \ArrayAccess, \JsonSerializ
 
         throw new DaoException("Offset '$key' doesn't exists");
     }
-    
+
     public function jsonSerialize() {
         $result = array();
-        
+
         foreach($this->objects as $key => $value) {
             $result[] = $value->jsonSerialize();
         }
-        
+
         return $result;
     }
-    
+
     public function toArray() {
         $result = array();
-        
+
         foreach($this->objects as $key => $value) {
             $result[] = $value->toArray();
         }
-        
+
         return $result;
     }
-    
+
     function getIterator()
     {
         return new \ArrayIterator($this->objects);
     }
-    
+
     function count()
     {
         return count($this->objects);
