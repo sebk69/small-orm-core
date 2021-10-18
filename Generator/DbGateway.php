@@ -8,7 +8,7 @@
 namespace Sebk\SmallOrmCore\Generator;
 
 
-use Sebk\SmallOrmCore\Database\ConnectionMysql;
+use Sebk\SmallOrmCore\Database\AbstractConnection;
 
 class DbGateway
 {
@@ -19,9 +19,9 @@ class DbGateway
 
     /**
      * DbGateway constructor.
-     * @param ConnectionMysql $connection
+     * @param AbstractConnection $connection
      */
-    public function __construct(ConnectionMysql $connection)
+    public function __construct(AbstractConnection $connection)
     {
         // build tables list
         $dbTables = $connection->execute("show tables");

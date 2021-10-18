@@ -45,7 +45,7 @@ abstract class AbstractDao {
 
     /**
      * Get connection
-     * @return ConnectionMysql
+     * @return AbstractConnection
      */
     public function getConnection()
     {

@@ -36,7 +36,11 @@ class Config
         $dir = $this->container->get('kernel')->locateResource("@".$this->bundle)."Resources/SmallOrm";
 
         if(!is_dir($dir)) {
-            mkdir($dir);
+            mkdir($dir, "0755", true);
+        }
+
+        if (!is_file($dir."/".$this->connection.".txt")) {
+            file_put_contents($dir."/".$this->connection.".txt", "");
         }
 
         return $dir."/".$this->connection.".txt";

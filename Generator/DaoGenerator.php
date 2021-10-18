@@ -12,7 +12,7 @@ use Sebk\SmallOrmCore\Dao\AbstractDao;
 use Sebk\SmallOrmCore\Dao\DaoException;
 use Sebk\SmallOrmCore\Dao\Field;
 use Sebk\SmallOrmCore\Dao\ToOneRelation;
-use Sebk\SmallOrmCore\Database\ConnectionMysql;
+use Sebk\SmallOrmCore\Database\AbstractConnection;
 use Sebk\SmallOrmCore\Factory\Connections;
 use Sebk\SmallOrmCore\Factory\Dao;
 use Sebk\SmallOrmCore\Factory\DaoNotFoundException;
@@ -86,9 +86,11 @@ class [modelName] extends Model
      * @return string
      */
     private function getDaoClassName($table) {
-        foreach ($this->config[$this->bundle]["connections"][$this->connectionName]["remove_tables_namespaces"] as $namespace) {
-            if(substr($table, 0, strlen($namespace)) == $namespace) {
-                $table = substr($table, strlen($namespace));
+        if (isset($this->config[$this->bundle]["connections"][$this->connectionName]["remove_tables_namespaces"])) {
+            foreach ($this->config[$this->bundle]["connections"][$this->connectionName]["remove_tables_namespaces"] as $namespace) {
+                if(substr($table, 0, strlen($namespace)) == $namespace) {
+                    $table = substr($table, strlen($namespace));
+                }
             }
         }
 

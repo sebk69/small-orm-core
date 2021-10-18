@@ -8,7 +8,7 @@
 namespace Sebk\SmallOrmCore\Generator;
 
 
-use Sebk\SmallOrmCore\Database\ConnectionMysql;
+use Sebk\SmallOrmCore\Database\AbstractConnection;
 
 class CreateTableParser
 {
@@ -16,7 +16,7 @@ class CreateTableParser
     protected $createTableString;
     protected $relations = [];
 
-    public function __construct(ConnectionMysql $connection)
+    public function __construct(AbstractConnection $connection)
     {
         $this->connection = $connection;
     }

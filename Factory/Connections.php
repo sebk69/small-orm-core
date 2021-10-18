@@ -7,8 +7,8 @@
 
 namespace Sebk\SmallOrmCore\Factory;
 
+use Sebk\SmallOrmCore\Database\AbstractConnection;
 use Sebk\SmallOrmCore\Database\ConnectionException;
-use Sebk\SmallOrmCore\Database\ConnectionMysql;
 
 /**
  * Factory for connections
@@ -38,7 +38,7 @@ class Connections
     /**
      * Get a connection
      * @param type $connectionName
-     * @return ConnectionMysql
+     * @return AbstractConnection
      * @throws ConfigurationException
      */
     public function get($connectionName = 'default')
