@@ -89,15 +89,37 @@ class Dao
 
         foreach ($this->config[$bundle]["connections"] as $connectionName => $connectionsParams) {
             if ($connectionName == $useConnection || $useConnection === null) {
+                // If dao already instancited => return dao instance
                 if (isset(static::$loadedDao[$bundle][$model][$connectionName])) {
                     return static::$loadedDao[$bundle][$model][$connectionName];
                 }
 
-                $className = $connectionsParams["dao_namespace"] . '\\' . $model;
+                // Check if connection is an alias of other connection
+                if (is_string($connectionsParams) && substr($connectionsParams, 0, 1) == "@") {
+                    // Get connection name
+                    $aliasConnnection = str_replace("@", "", $connectionsParams);
+
+                    // Target connection exists for this bundle
+                    if (!isset($this->config[$bundle]["connections"][$aliasConnnection])) {
+                        throw new DaoNotFoundException("L'alias de connection est inconnu ($aliasConnnection)");
+                    }
+
+                    // We get namespaces from target connection
+                    $daoNamespace = $this->config[$bundle]["connections"][$aliasConnnection]["dao_namespace"];
+                    $modelNamespace = $this->config[$bundle]["connections"][$aliasConnnection]["model_namespace"];
+                } else {
+                    // Otherwise, get namespace from connection
+                    $daoNamespace = $connectionsParams["dao_namespace"];
+                    $modelNamespace = $connectionsParams["model_namespace"];
+                }
+
+                // Check existance of dao
+                $className = $daoNamespace . '\\' . $model;
                 if (class_exists($className)) {
                     if (!(new \ReflectionClass($className))->isAbstract()) {
+                        // Instantiate and return dao
                         static::$loadedDao[$bundle][$model][$connectionName] = new $className($this->connectionFactory->get($connectionName),
-                            $this, $connectionsParams["model_namespace"], $model,
+                            $this, $modelNamespace, $model,
                             $bundle,
                             $this->container);
 
