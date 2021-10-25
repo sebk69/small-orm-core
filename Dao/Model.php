@@ -99,7 +99,6 @@ class Model implements \JsonSerializable {
                 } elseif ($typeField == "field") {
                     switch($this->types[$name]["type"]) {
                         case Field::TYPE_STRING:
-                        case Field::TYPE_NUMBER:
                             return $this->fields[$name];
                         case Field::TYPE_BOOLEAN:
                             if($this->fields[$name] !== null) {
@@ -113,6 +112,11 @@ class Model implements \JsonSerializable {
                             } else {
                                 return null;
                             }
+                        case Field::TYPE_FLOAT:
+                            return (float)$this->fields[$name];
+                            break;
+                        case Field::TYPE_INT:
+                            return (int)$this->fields[$name];
                     }
                     return $this->fields[$name];
                 } elseif ($typeField == "toOne") {
@@ -130,7 +134,6 @@ class Model implements \JsonSerializable {
                 } elseif ($typeField == "field") {
                     switch($this->types[$name]["type"]) {
                         case Field::TYPE_STRING:
-                        case Field::TYPE_NUMBER:
                             $this->fields[$name] = $args[0];
                             break;
                         case Field::TYPE_BOOLEAN:
@@ -146,6 +149,30 @@ class Model implements \JsonSerializable {
                             } else {
                                 $this->fields[$name] = null;
                             }
+                            break;
+                        case Field::TYPE_FLOAT:
+                            if (!is_scalar($args[0])) {
+                                throw new \Exception("Field must be float ('" . lcfirst($args[0]) . "'");
+                            }
+
+                            $type = gettype($args[0]);
+
+                            $isFloat = false;
+                            if ($type === "float") {
+                                $isFloat = true;
+                            } else {
+                                $isFloat = filter_var($args[0], FILTER_VALIDATE_FLOAT);
+                            }
+                            if (!$isFloat) {
+                                throw new \Exception("Field must be float ('" . lcfirst($args[0]) . "')");
+                            }
+                            $this->fields[$name] = (float)$args[0];
+                            break;
+                        case Field::TYPE_INT:
+                            if (!ctype_digit(strval($args[0]))) {
+                                throw new \Exception("Field must be int ('" . lcfirst($args[0]) . "')");
+                            }
+                            $this->fields[$name] = (int)$args[0];
                             break;
                     }
 
@@ -300,9 +327,6 @@ class Model implements \JsonSerializable {
                     case Field::TYPE_STRING:
                         $result[$key] = $value;
                         break;
-                    case Field::TYPE_NUMBER:
-                        $result[$key] = (float)$value;
-                        break;
                     case Field::TYPE_BOOLEAN:
                         if($value !== null) {
                             $result[$key] = $value == $this->types[$key]["format"][1] ? true : false;
@@ -318,6 +342,11 @@ class Model implements \JsonSerializable {
                             $result[$key] = null;
                         }
                         break;
+                    case Field::TYPE_FLOAT:
+                        $result[$key] = (float)$value;
+                        break;
+                    case Field::TYPE_INT:
+                        $result[$key] = (int)$value;
                 }
             } else {
                 $result[$key] = null;
