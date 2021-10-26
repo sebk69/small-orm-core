@@ -12,6 +12,8 @@ use Sebk\SmallOrmCore\Database\AbstractConnection;
 
 class DbGateway
 {
+    protected $connection;
+    protected $loaded = false;
     protected $dbTables = [];
     protected $toOnes = [];
     protected $toManys = [];
@@ -23,35 +25,44 @@ class DbGateway
      */
     public function __construct(AbstractConnection $connection)
     {
-        // build tables list
-        $dbTables = $connection->execute("show tables");
-        foreach ($dbTables as $record) {
-            foreach ($record as $table) {
-                // foreach table
-                $this->dbTables[] = $table;
+        $this->connection = $connection;
+    }
 
-                // get description
-                $this->tableDescriptions[$table] = $connection->execute("describe `".$table."`");
+    protected function load()
+    {
+        if (!$this->loaded) {
+            $this->loaded = true;
 
-                // get to one relations
-                $parser = new CreateTableParser($connection);
-                $parser->openTable($table);
-                $parser->parseForeignKeys();
-                $this->toOnes[$table] = $parser->getRelations();
+            // build tables list
+            $dbTables = $connection->execute("show tables");
+            foreach ($dbTables as $record) {
+                foreach ($record as $table) {
+                    // foreach table
+                    $this->dbTables[] = $table;
 
-                // impact on to many
-                foreach ($this->toOnes[$table] as $toOneRelation) {
-                    $toManyRelation = [
-                        "toTable" => $table,
-                        "fromField" => $toOneRelation["toField"],
-                        "toField" => $toOneRelation["fromField"],
-                    ];
+                    // get description
+                    $this->tableDescriptions[$table] = $connection->execute("describe `".$table."`");
 
-                    if(!isset($this->toMany[$toOneRelation["toTable"]])) {
-                        $this->toMany[$toOneRelation["toTable"]] = [];
+                    // get to one relations
+                    $parser = new CreateTableParser($connection);
+                    $parser->openTable($table);
+                    $parser->parseForeignKeys();
+                    $this->toOnes[$table] = $parser->getRelations();
+
+                    // impact on to many
+                    foreach ($this->toOnes[$table] as $toOneRelation) {
+                        $toManyRelation = [
+                            "toTable" => $table,
+                            "fromField" => $toOneRelation["toField"],
+                            "toField" => $toOneRelation["fromField"],
+                        ];
+
+                        if(!isset($this->toMany[$toOneRelation["toTable"]])) {
+                            $this->toMany[$toOneRelation["toTable"]] = [];
+                        }
+
+                        $this->toMany[$toOneRelation["toTable"]][] = $toManyRelation;
                     }
-
-                    $this->toMany[$toOneRelation["toTable"]][] = $toManyRelation;
                 }
             }
         }
@@ -63,6 +74,7 @@ class DbGateway
      */
     public function getTables()
     {
+        $this->load();
         return $this->dbTables;
     }
 
@@ -73,6 +85,7 @@ class DbGateway
      */
     public function getToOnes($table)
     {
+        $this->load();
         if(isset($this->toOnes[$table])) {
             return $this->toOnes[$table];
         }
@@ -87,6 +100,7 @@ class DbGateway
      */
     public function getToManys($table)
     {
+        $this->load();
         if(isset($this->toMany[$table])) {
             return $this->toMany[$table];
         }
@@ -96,6 +110,7 @@ class DbGateway
 
     public function getDescription($table)
     {
+        $this->load();
         if(isset($this->tableDescriptions[$table])) {
             return $this->tableDescriptions[$table];
         }
