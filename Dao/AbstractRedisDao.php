@@ -67,9 +67,19 @@ abstract class AbstractRedisDao extends AbstractDao
     public function getResult($query, $asCollection = false) {
         $records = $this->getRawResult($query);
 
+        if ($records == null) {
+            return null;
+        }
+
         $result = [];
         foreach ($records as $record) {
-            $result = $this->makeModelFromStdClass($record);
+            $model = $this->makeModelFromStdClass($record);
+
+            if (method_exists($model, "onLoad")) {
+                $model->onLoad();
+            }
+
+            $result[] = $model;
         }
         
         if ($asCollection) {
@@ -184,6 +194,8 @@ abstract class AbstractRedisDao extends AbstractDao
         if (count($result) == 0) {
             throw new DaoEmptyException("Find one with no result");
         }
+
+        return $result;
     }
 
     /**
@@ -196,11 +208,15 @@ abstract class AbstractRedisDao extends AbstractDao
     public function findBy($conds, $dependenciesAliases = array())
     {
         $query = $this->createQueryBuilder();
-        
-        foreach ($conds as $cond) {
-            $query->get($cond);
+
+        if (is_array($conds)) {
+            foreach ($conds as $cond) {
+                $query->get($cond);
+            }
+        } else {
+            $query->get($conds);
         }
         
-        return $this->getResult();
+        return $this->getRawResult($query);
     }
 }
