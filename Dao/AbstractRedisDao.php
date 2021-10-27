@@ -104,16 +104,6 @@ abstract class AbstractRedisDao extends AbstractDao
         throw new \Exception("buildResult not available for redis connector !");
     }
     
-    public function loadToOne($alias, $model, $dependenciesAliases = array())
-    {
-        throw new \Exception("loadToOne not available for redis connector !");
-    }
-    
-    public function loadToMany($alias, $model, $dependenciesAliases = array())
-    {
-        throw new \Exception("loadToMany not available for redis connector !");
-    }
-
     /**
      * Save a model in redis
      * @param Model $model
@@ -217,6 +207,6 @@ abstract class AbstractRedisDao extends AbstractDao
             $query->get($conds);
         }
         
-        return $this->getRawResult($query);
+        return $this->getResult($query);
     }
 }

@@ -1,5 +1,11 @@
 <?php
 
+/**
+ * This file is a part of small-orm-core
+ * Copyright 2021 - Sébastien Kus
+ * Under GNU GPL V3 licence
+ */
+
 namespace Sebk\SmallOrmCore\RedisQueryBuilder;
 
 use Sebk\SmallOrmCore\Dao\AbstractRedisDao;
@@ -105,10 +111,10 @@ class QueryBuilder
 
         if ($key != "") {
             // If no key append key to dbTableName
-            $fullkey = $this->dao->getDbTableName() . ":" . $key;
+            $fullkey = $this->dao->getDbTableName(false) . ":" . $key;
         } else {
             // else get dbTableName as key
-            $fullkey = $this->dao->getDbTableName();
+            $fullkey = $this->dao->getDbTableName(false);
         }
         $value->setKey($key);
 

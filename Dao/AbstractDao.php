@@ -82,8 +82,12 @@ abstract class AbstractDao {
     /**
      * @return string
      */
-    public function getDbTableName() {
-        return "`".$this->dbTableName."`";
+    public function getDbTableName($protected = true) {
+        if ($protected) {
+            return "`" . $this->dbTableName . "`";
+        } else {
+            return $this->dbTableName;
+        }
     }
 
     /**
