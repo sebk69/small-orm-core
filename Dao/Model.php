@@ -169,7 +169,7 @@ class Model implements \JsonSerializable {
                             $this->fields[$name] = (float)$args[0];
                             break;
                         case Field::TYPE_INT:
-                            if (!ctype_digit(strval($args[0]))) {
+                            if (!ctype_digit((string)$args[0])) {
                                 throw new \Exception("Field must be int ('" . lcfirst($args[0]) . "')");
                             }
                             $this->fields[$name] = (int)$args[0];

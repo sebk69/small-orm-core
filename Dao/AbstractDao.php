@@ -44,6 +44,15 @@ abstract class AbstractDao {
     }
 
     /**
+     * Get DAO factory
+     * @return Dao
+     */
+    public function getDaoFactory()
+    {
+        return $this->daoFactory;
+    }
+
+    /**
      * Get connection
      * @return AbstractConnection
      */
@@ -147,7 +156,7 @@ abstract class AbstractDao {
     /**
      * Get fields difinitions
      * @param boolean $withIds
-     * @return array
+     * @return Field[]
      */
     public function getFields($withIds = true) {
         $result = array();
@@ -197,6 +206,20 @@ abstract class AbstractDao {
         }
 
         return $model;
+    }
+
+    /**
+     * Get default value for a property
+     * @param $property
+     * @return mixed
+     */
+    public function getDefaultValue($property)
+    {
+        if (isset($this->defaultValues[$property])) {
+            return $this->defaultValues[$property];
+        }
+
+        return null;
     }
 
     /**
@@ -692,6 +715,7 @@ abstract class AbstractDao {
      * @return \Sebk\SmallOrmCore\Dao\AbstractDao
      */
     protected function insert(Model $model) {
+        $connection = $this->connection->connect();
         $sql = "INSERT INTO " . $this->connection->getDatabase() . "." . $this->dbTableName . " ";
         $fields = $model->toArray(false, true);
 
@@ -705,13 +729,13 @@ abstract class AbstractDao {
         $sql .= implode(", ", $queryFields);
         $sql .= ");";
 
-        $this->connection->execute($sql, $fields);
+        $this->connection->execute($sql, $fields, null, $connection);
 
-        if ($this->connection->lastInsertId() !== null) {
+        if ($this->connection->lastInsertId($connection) !== null) {
             foreach ($model->getPrimaryKeys() as $key => $value) {
                 if ($value === null) {
                     $method = "raw" . $key;
-                    $model->$method($this->connection->lastInsertId());
+                    $model->$method($this->connection->lastInsertId($connection));
                 }
             }
         }

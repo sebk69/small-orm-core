@@ -36,6 +36,8 @@ class ConnectionMysql extends AbstractConnection
                 throw new ConnectionException("Fail to execute request : SQLSTATE[".$errInfo[0]."][".$errInfo[1]."] ".$errInfo[2]);
             }
         }
+
+        return $this->pdo;
     }
 
     /**
@@ -46,16 +48,20 @@ class ConnectionMysql extends AbstractConnection
      * @return mixed
      * @throws ConnectionException
      */
-    public function execute($sql, $params = array(), $retry = false)
+    public function execute($sql, $params = array(), $retry = false, $forceConnection = null)
     {
-        $this->connect();
+        if ($forceConnection === null) {
+            $pdo = $this->connect();
+        } else {
+            $pdo = $forceConnection;
+        }
 
-        if ($this->pdo->getAttribute(\PDO::ATTR_SERVER_INFO)=='MySQL server has gone away') {
-            $this->pdo = null;
+        if ($pdo->getAttribute(\PDO::ATTR_SERVER_INFO)=='MySQL server has gone away') {
+            $pdo = null;
             $this->connect();
         }
 
-        $statement = $this->pdo->prepare($sql);
+        $statement = $pdo->prepare($sql);
 
         foreach ($params as $param => $value) {
             $statement->bindValue(":".$param, $value);
@@ -65,7 +71,7 @@ class ConnectionMysql extends AbstractConnection
         } else {
             $errInfo = $statement->errorInfo();
             if($errInfo[0] == "HY000" && $errInfo[1] == "2006" && !$retry) {
-                $this->pdo = null;
+                $pdo = null;
                 $this->connect();
                 return $this->execute($sql, $params, true);
             } else {

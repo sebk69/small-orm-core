@@ -60,7 +60,7 @@ abstract class AbstractConnection
      * @return mixed
      * @throws ConnectionException
      */
-    abstract public function execute($sql, $params = array(), $retry = false);
+    abstract public function execute($sql, $params = array(), $retry = false, $forceConnection = null);
 
     /**
      * Start transaction
