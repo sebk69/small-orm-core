@@ -17,6 +17,7 @@ class Field
     const TYPE_BOOLEAN = "TYPE_BOOLEAN";
     const TYPE_FLOAT = "TYPE_FLOAT";
     const TYPE_INT = "TYPE_INT";
+    const TYPE_TIMESTAMP = "TYPE_TIMESTAMP";
 
     protected $dbName;
     protected $modelName;
@@ -62,6 +63,7 @@ class Field
             case static::TYPE_STRING:
             case static::TYPE_FLOAT:
             case static::TYPE_INT:
+            case static::TYPE_TIMESTAMP:
                 break;
             case static::TYPE_BOOLEAN:
                 // Default format

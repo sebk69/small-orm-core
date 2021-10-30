@@ -112,6 +112,12 @@ class Model implements \JsonSerializable {
                             } else {
                                 return null;
                             }
+                        case Field::TYPE_TIMESTAMP:
+                            if(!empty($this->fields[$name])) {
+                                return \DateTime::createFromFormat("U", $this->fields[$name]);
+                            } else {
+                                return null;
+                            }
                         case Field::TYPE_FLOAT:
                             return (float)$this->fields[$name];
                             break;
@@ -150,6 +156,13 @@ class Model implements \JsonSerializable {
                                 $this->fields[$name] = null;
                             }
                             break;
+                        case Field::TYPE_TIMESTAMP:
+                            if($args[0] !== null) {
+                                $this->fields[$name] = $args[0]->format("U");
+                            } else {
+                                $this->fields[$name] = 0;
+                            }
+                            break;
                         case Field::TYPE_FLOAT:
                             if (!is_scalar($args[0])) {
                                 throw new \Exception("Field must be float ('" . lcfirst($args[0]) . "'");
@@ -184,7 +197,6 @@ class Model implements \JsonSerializable {
                     $this->metadata[$name] = $args[0];
                 }
                 return $this;
-                break;
             case "raw":
                 if ($typeField == "primaryKeys") {
                     $this->primaryKeys[$name] = $args[0];
@@ -337,6 +349,14 @@ class Model implements \JsonSerializable {
                     case Field::TYPE_DATETIME:
                         if($value !== null) {
                             $date = \DateTime::createFromFormat(self::MYSQL_FORMAT_DATETIME, $value);
+                            $result[$key] = $date->format($this->types[$key]["format"]);
+                        } else {
+                            $result[$key] = null;
+                        }
+                        break;
+                    case Field::TYPE_TIMESTAMP:
+                        if(!empty($value)) {
+                            $date = \DateTime::createFromFormat("U", $value);
                             $result[$key] = $date->format($this->types[$key]["format"]);
                         } else {
                             $result[$key] = null;
