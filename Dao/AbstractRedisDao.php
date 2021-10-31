@@ -110,7 +110,7 @@ abstract class AbstractRedisDao extends AbstractDao
      * @return $this|AbstractRedisDao
      * @throws \Sebk\SmallOrmCore\Database\ConnectionException
      */
-    protected function insert(Model $model)
+    protected function insert(Model $model, $forceConnection = null)
     {
         // Create query
         $query = $this->createQueryBuilder()
@@ -118,7 +118,7 @@ abstract class AbstractRedisDao extends AbstractDao
         ;
         
         // Execute insert
-        $this->connection->execute($query->getInstruction(), $query->getParams());
+        $this->connection->execute($query->getInstruction(), $query->getParams(), false, $forceConnection);
         
         return $this;
     }
@@ -129,9 +129,9 @@ abstract class AbstractRedisDao extends AbstractDao
      * @return $this|AbstractRedisDao
      * @throws \Sebk\SmallOrmCore\Database\ConnectionException
      */
-    protected function update(Model $model)
+    protected function update(Model $model, $forceConnection = null)
     {
-        return $this->insert($model);
+        return $this->insert($model, $forceConnection);
     }
 
     /**
@@ -140,10 +140,10 @@ abstract class AbstractRedisDao extends AbstractDao
      * @return $this|AbstractRedisDao
      * @throws \Sebk\SmallOrmCore\Database\ConnectionException
      */
-    public function delete(Model $model)
+    public function delete(Model $model, $forceConnection = null)
     {
         // Create query
-        $query == $this->createQueryBuilder()
+        $query = $this->createQueryBuilder()
             ->del($model->getKey())
         ;
 
@@ -153,7 +153,7 @@ abstract class AbstractRedisDao extends AbstractDao
         }
 
         // Perform delete
-        $this->connection->execute($query->getInstruction(), $query->getParams());
+        $this->connection->execute($query->getInstruction(), $query->getParams(), false, $forceConnection);
 
         // Execute afterDelete method if exists
         if (method_exists($model, "afterDelete")) {
@@ -170,7 +170,7 @@ abstract class AbstractRedisDao extends AbstractDao
      * @return Model|Model[]
      * @throws \Exception
      */
-    public function findOneBy($conds, $dependenciesAliases = array())
+    public function findOneBy($conds = "", $dependenciesAliases = array())
     {
         if (is_array($conds)) {
             throw new \Exception("Can't use multiples keys for findOneBy");
@@ -185,7 +185,7 @@ abstract class AbstractRedisDao extends AbstractDao
             throw new DaoEmptyException("Find one with no result");
         }
 
-        return $result;
+        return $result[0];
     }
 
     /**

@@ -542,7 +542,7 @@ class Model implements \JsonSerializable {
 
     /**
      * Get the DAO of model
-     * @return mixed
+     * @return AbstractDao
      */
     public function getDao()
     {
@@ -555,9 +555,9 @@ class Model implements \JsonSerializable {
      * Persist this model
      * @return $this
      */
-    public function persist()
+    public function persist($forceConnection = null)
     {
-        $this->getDao()->persist($this);
+        $this->getDao()->persist($this, $forceConnection);
 
         return $this;
     }
@@ -566,9 +566,9 @@ class Model implements \JsonSerializable {
      * Delete this model
      * @return $this
      */
-    public function delete()
+    public function delete($forceConnection = null)
     {
-        $this->getDao()->delete($this);
+        $this->getDao()->delete($this, $forceConnection);
 
         return $this;
     }

@@ -79,8 +79,8 @@ abstract class AbstractDao {
     }
 
     /**
-     * @param string $name
-     * @return \Sebk\SmallOrmCore\Database\AbstractDao
+     * @param $name
+     * @return $this
      */
     protected function setModelName($name) {
         $this->modelName = $name;
@@ -101,7 +101,8 @@ abstract class AbstractDao {
 
     /**
      * @param string $name
-     * @return \Sebk\SmallOrmCore\Database\AbstractDao
+     * @param $name
+     * @return $this
      */
     protected function setDbTableName($name) {
         $this->dbTableName = $name;
@@ -729,7 +730,7 @@ abstract class AbstractDao {
         $sql .= implode(", ", $queryFields);
         $sql .= ");";
 
-        $this->connection->execute($sql, $fields, null, $connection);
+        $this->connection->execute($sql, $fields, false, $connection);
 
         if ($this->connection->lastInsertId($connection) !== null) {
             foreach ($model->getPrimaryKeys() as $key => $value) {
@@ -768,7 +769,7 @@ abstract class AbstractDao {
      * @return \Sebk\SmallOrmCore\Dao\AbstractDao
      * @throws DaoException
      */
-    protected function update(Model $model) {
+    protected function update(Model $model, $forceConnection = null) {
         if (!$model->fromDb) {
             throw new DaoException("Try update a record not from db from '$this->modelBundle' '$this->modelName' model");
         }
@@ -798,7 +799,7 @@ abstract class AbstractDao {
         $sql .= implode(" AND ", $conds);
 
 
-        $this->connection->execute($sql, $parms);
+        $this->connection->execute($sql, $parms, false, $forceConnection);
 
         $model->fromDb = true;
         $model->altered = false;
@@ -812,7 +813,7 @@ abstract class AbstractDao {
      * @return \Sebk\SmallOrmCore\Dao\AbstractDao
      * @throws DaoException
      */
-    public function delete(Model $model) {
+    public function delete(Model $model, $forceConnection = null) {
         if (!$model->fromDb) {
             throw new DaoException("Try delete a record not from db from '$this->modelBundle' '$this->modelName' model");
         }
@@ -836,7 +837,7 @@ abstract class AbstractDao {
             $model->beforeDelete();
         }
 
-        $this->connection->execute($sql, $parms);
+        $this->connection->execute($sql, $parms, false, $forceConnection);
 
         if (method_exists($model, "afterDelete")) {
             $model->afterDelete();
@@ -850,17 +851,19 @@ abstract class AbstractDao {
 
     /**
      * Persist a record
-     * @param \Sebk\SmallOrmCore\Dao\Model $model
+     * @param Model $model
+     * @param mixed $forceConnection
+     * @throws DaoException
      */
-    public function persist(Model $model) {
+    public function persist(Model $model, $forceConnection = null) {
         if (method_exists($model, "beforeSave")) {
             $model->beforeSave();
         }
 
         if ($model->fromDb) {
-            $this->update($model);
+            $this->update($model, $forceConnection);
         } else {
-            $this->insert($model);
+            $this->insert($model, $forceConnection);
         }
 
         if (method_exists($model, "afterSave")) {
