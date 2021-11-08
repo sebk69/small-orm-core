@@ -99,6 +99,7 @@ class Model implements \JsonSerializable {
                 } elseif ($typeField == "field") {
                     switch($this->types[$name]["type"]) {
                         case Field::TYPE_STRING:
+                        case Field::TYPE_PHP_FILTER:
                             return $this->fields[$name];
                         case Field::TYPE_BOOLEAN:
                             if($this->fields[$name] !== null) {
@@ -140,6 +141,7 @@ class Model implements \JsonSerializable {
                 } elseif ($typeField == "field") {
                     switch($this->types[$name]["type"]) {
                         case Field::TYPE_STRING:
+                        case Field::TYPE_PHP_FILTER:
                             $this->fields[$name] = $args[0];
                             break;
                         case Field::TYPE_BOOLEAN:
@@ -157,7 +159,7 @@ class Model implements \JsonSerializable {
                             }
                             break;
                         case Field::TYPE_TIMESTAMP:
-                            if($args[0] !== null) {
+                            if($args[0] !== 0 && !empty($args[0])) {
                                 $this->fields[$name] = $args[0]->format("U");
                             } else {
                                 $this->fields[$name] = 0;
@@ -337,6 +339,7 @@ class Model implements \JsonSerializable {
             if ($value !== null) {
                 switch ($this->types[$key]["type"]) {
                     case Field::TYPE_STRING:
+                    case Field::TYPE_PHP_FILTER:
                         $result[$key] = $value;
                         break;
                     case Field::TYPE_BOOLEAN:

@@ -13,6 +13,7 @@ namespace Sebk\SmallOrmCore\Dao;
 class Field
 {
     const TYPE_STRING = "TYPE_STRING";
+    const TYPE_PHP_FILTER = "TYPE_PHP_FILTER";
     const TYPE_DATETIME = "TYPE_DATETIME";
     const TYPE_BOOLEAN = "TYPE_BOOLEAN";
     const TYPE_FLOAT = "TYPE_FLOAT";
@@ -63,7 +64,6 @@ class Field
             case static::TYPE_STRING:
             case static::TYPE_FLOAT:
             case static::TYPE_INT:
-            case static::TYPE_TIMESTAMP:
                 break;
             case static::TYPE_BOOLEAN:
                 // Default format
@@ -80,6 +80,7 @@ class Field
                 // set format
                 $this->format = $format;
                 break;
+            case static::TYPE_TIMESTAMP:
             case static::TYPE_DATETIME:
                 // Default format
                 if($format === null) {
@@ -92,6 +93,25 @@ class Field
                 } catch (\Exception $e) {
                     throw new \Exception("Malformed format for field '$this->modelName'");
                 }
+                // set format
+                $this->format = $format;
+                break;
+            case static::TYPE_PHP_FILTER:
+                if (!in_array($format, [
+                    FILTER_VALIDATE_BOOLEAN,
+                    FILTER_VALIDATE_BOOL,
+                    FILTER_VALIDATE_DOMAIN,
+                    FILTER_VALIDATE_EMAIL,
+                    FILTER_VALIDATE_FLOAT,
+                    FILTER_VALIDATE_INT,
+                    FILTER_VALIDATE_IP,
+                    FILTER_VALIDATE_MAC,
+                    FILTER_VALIDATE_REGEXP,
+                    FILTER_VALIDATE_URL,
+                ])) {
+                    throw new \Exception("Malformed format for field '$this->modelName'");
+                }
+
                 // set format
                 $this->format = $format;
                 break;
