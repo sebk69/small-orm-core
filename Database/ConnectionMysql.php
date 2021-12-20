@@ -18,7 +18,7 @@ class ConnectionMysql extends AbstractConnection
      * Connect to database, use existing connection if exists
      * @throws ConnectionException
      */
-    public function connect($forceReconnect = false)
+    public function connect($forceReconnect = true)
     {
         // Connect to database
         $connectionString = "mysql:dbname=$this->database;host=$this->host;charset=$this->encoding";

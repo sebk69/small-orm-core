@@ -124,6 +124,8 @@ class Model implements \JsonSerializable {
                             break;
                         case Field::TYPE_INT:
                             return (int)$this->fields[$name];
+                        case Field::TYPE_JSON:
+                            return json_decode($this->fields[$name], $this->types[$name]["format"]);
                     }
                     return $this->fields[$name];
                 } elseif ($typeField == "toOne") {
@@ -188,6 +190,9 @@ class Model implements \JsonSerializable {
                                 throw new \Exception("Field must be int ('" . lcfirst($args[0]) . "')");
                             }
                             $this->fields[$name] = (int)$args[0];
+                            break;
+                        case Field::TYPE_JSON:
+                            $this->fields[$name] = json_encode($args[0]);
                             break;
                     }
 
@@ -344,7 +349,11 @@ class Model implements \JsonSerializable {
                         break;
                     case Field::TYPE_BOOLEAN:
                         if($value !== null) {
-                            $result[$key] = $value == $this->types[$key]["format"][1] ? true : false;
+                            if ($fromJsonSeriaze) {
+                                $result[$key] = $value == $this->types[$key]["format"][1] ? true : false;
+                            } else {
+                                $result[$key] = $value;
+                            }
                         } else {
                             $result[$key] = null;
                         }
@@ -370,6 +379,14 @@ class Model implements \JsonSerializable {
                         break;
                     case Field::TYPE_INT:
                         $result[$key] = (int)$value;
+                        break;
+                    case Field::TYPE_JSON:
+                        if ($fromJsonSeriaze) {
+                            $result[$key] = json_decode($value, $this->types[$key]["format"]);
+                        } else {
+                            $result[$key] = $value;
+                        }
+                        break;
                 }
             } else {
                 $result[$key] = null;

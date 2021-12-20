@@ -34,17 +34,17 @@ class DbGateway
             $this->loaded = true;
 
             // build tables list
-            $dbTables = $connection->execute("show tables");
+            $dbTables = $this->connection->execute("show tables");
             foreach ($dbTables as $record) {
                 foreach ($record as $table) {
                     // foreach table
                     $this->dbTables[] = $table;
 
                     // get description
-                    $this->tableDescriptions[$table] = $connection->execute("describe `".$table."`");
+                    $this->tableDescriptions[$table] = $this->connection->execute("describe `".$table."`");
 
                     // get to one relations
-                    $parser = new CreateTableParser($connection);
+                    $parser = new CreateTableParser($this->connection);
                     $parser->openTable($table);
                     $parser->parseForeignKeys();
                     $this->toOnes[$table] = $parser->getRelations();

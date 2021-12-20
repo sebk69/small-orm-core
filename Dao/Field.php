@@ -19,6 +19,7 @@ class Field
     const TYPE_FLOAT = "TYPE_FLOAT";
     const TYPE_INT = "TYPE_INT";
     const TYPE_TIMESTAMP = "TYPE_TIMESTAMP";
+    const TYPE_JSON = "TYPE_JSON";
 
     protected $dbName;
     protected $modelName;
@@ -114,6 +115,13 @@ class Field
 
                 // set format
                 $this->format = $format;
+                break;
+            case static::TYPE_JSON:
+                if (is_bool($format)) {
+                    $this->format = $format;
+                } else {
+                    $this->format = true;
+                }
                 break;
             default:
                 throw new \Exception("Unkown type '$type' for field '$this->modelName'");

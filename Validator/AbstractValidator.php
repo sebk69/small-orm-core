@@ -82,7 +82,7 @@ abstract class AbstractValidator
     /**
      * Test field is unique
      * @param string $field
-     * @return string
+     * @return bool
      */
     public function testUnique($field)
     {
