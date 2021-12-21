@@ -732,13 +732,22 @@ abstract class AbstractDao {
         $sql .= implode(", ", $queryFields);
         $sql .= ");";
 
-        $this->connection->execute($sql, $fields, false, $connection);
+        $lastInsertId = $this->connection->execute($sql, $fields, false, $connection);
 
-        if ($this->connection->lastInsertId($connection) !== null) {
+        if ($lastInsertId == null) {
+            if ($this->connection->lastInsertId($connection) !== null) {
+                foreach ($model->getPrimaryKeys() as $key => $value) {
+                    if ($value === null) {
+                        $method = "raw" . $key;
+                        $model->$method($this->connection->lastInsertId($connection));
+                    }
+                }
+            }
+        } else {
             foreach ($model->getPrimaryKeys() as $key => $value) {
                 if ($value === null) {
                     $method = "raw" . $key;
-                    $model->$method($this->connection->lastInsertId($connection));
+                    $model->$method($lastInsertId);
                 }
             }
         }

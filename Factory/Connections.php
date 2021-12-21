@@ -18,6 +18,7 @@ class Connections
 {
     public static $namespaces = [
         '\Sebk\SmallOrmCore\Database\\',
+        '\Sebk\SmallOrmSwoole\Database\\',
     ];
 
     public $config;
@@ -41,9 +42,9 @@ class Connections
      * @return AbstractConnection
      * @throws ConfigurationException
      */
-    public function get($connectionName = 'default')
+    public function get($connectionName = 'default', $new = false)
     {
-        if ($connectionName == 'default') {
+        if ($connectionName == 'default' && !$new) {
             $connectionName = $this->defaultConnection;
         }
 
@@ -51,7 +52,7 @@ class Connections
             throw new ConfigurationException("The connection '$connectionName' is not configured in app/config");
         }
 
-        if (!isset(static::$connections[$connectionName])) {
+        if (!isset(static::$connections[$connectionName]) || $new) {
             // Get config for connection
             $connectionConfig = $this->config[$connectionName];
 
@@ -74,14 +75,24 @@ class Connections
                 throw new ConnectionException("The connection type '" . $connectionConfig['type'] . "' does not exists ($class)");
             }
 
-            // Create instance
-            static::$connections[$connectionName] = new $class(
-                $connectionConfig['type'], $connectionConfig['host'],
-                $connectionConfig['database'], $connectionConfig['user'],
-                $connectionConfig['password'],
-                $connectionConfig['encoding'],
-                isset($connectionConfig['tryCreateDatabase']) ?? $connectionConfig['tryCreateDatabase']
-            );
+            if (!$new) {
+                // Create instance
+                static::$connections[$connectionName] = new $class(
+                    $connectionConfig['type'], $connectionConfig['host'],
+                    $connectionConfig['database'], $connectionConfig['user'],
+                    $connectionConfig['password'],
+                    $connectionConfig['encoding'],
+                    isset($connectionConfig['tryCreateDatabase']) ?? $connectionConfig['tryCreateDatabase']
+                );
+            } else {
+                return new $class(
+                    $connectionConfig['type'], $connectionConfig['host'],
+                    $connectionConfig['database'], $connectionConfig['user'],
+                    $connectionConfig['password'],
+                    $connectionConfig['encoding'],
+                    isset($connectionConfig['tryCreateDatabase']) ?? $connectionConfig['tryCreateDatabase']
+                );
+            }
         }
 
         return static::$connections[$connectionName];
