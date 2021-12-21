@@ -37,12 +37,20 @@ class PersistThread
      */
     protected $pdo;
 
+    /**
+     * @param AbstractConnection $connection
+     */
     public function __construct(AbstractConnection $connection)
     {
         $this->connection = $connection;
         $this->connection->connect();
     }
 
+    /**
+     * Persist a model in the thread
+     * @param Model $model
+     * @return $this
+     */
     public function pushPersist(Model $model)
     {
         $this->bag[] = [
@@ -52,7 +60,12 @@ class PersistThread
 
         return $this;
     }
-    
+
+    /**
+     * Delete a model in the thread
+     * @param Model $model
+     * @return $this
+     */
     public function pushDelete(Model $model)
     {
         $this->bag[] = [
@@ -62,7 +75,11 @@ class PersistThread
 
         return $this;
     }
-    
+
+    /**
+     * Start transaction in the thread
+     * @return $this
+     */
     public function startTransaction()
     {
         $this->bag[] = [
@@ -72,7 +89,11 @@ class PersistThread
 
         return $this;
     }
-    
+
+    /**
+     * Commit thread
+     * @return $this
+     */
     public function commit()
     {
         $this->bag[] = [
@@ -83,7 +104,11 @@ class PersistThread
 
         return $this;
     }
-    
+
+    /**
+     * Roolback thread
+     * @return $this
+     */
     public function rollback()
     {
         $this->bag = [];
@@ -98,6 +123,14 @@ class PersistThread
         return $this;
     }
 
+    /**
+     * Get sql
+     * @param Model|null $model
+     * @param $type
+     * @param $key
+     * @return array
+     * @throws DaoException
+     */
     protected function getSqlForModel(?Model $model, $type, $key)
     {
         $params = [];
@@ -151,6 +184,11 @@ class PersistThread
         return [$sql, $params];
     }
 
+    /**
+     * Flush thread
+     * @return void
+     * @throws DaoException
+     */
     public function flush()
     {
         $sql = "";
@@ -178,6 +216,10 @@ class PersistThread
         }
     }
 
+    /**
+     * Close thread
+     * @return void
+     */
     public function close()
     {
         if (method_exists($this->connection, "getPdo") && $this->pdo != null) {
