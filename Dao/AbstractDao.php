@@ -719,20 +719,10 @@ abstract class AbstractDao {
      */
     protected function insert(Model $model) {
         $connection = $this->connection->connect();
-        $sql = "INSERT INTO " . $this->connection->getDatabase() . "." . $this->dbTableName . " ";
-        $fields = $model->toArray(false, true);
 
-        $columns = array();
-        foreach ($fields as $key => $val) {
-            $queryFields[$key] = ":$key";
-            $columns[] = $this->getField($key)->getDbName();
-        }
-        $sql .= "(" . implode(", ", $columns) . ")";
-        $sql .= " VALUES(";
-        $sql .= implode(", ", $queryFields);
-        $sql .= ");";
-
-        $lastInsertId = $this->connection->execute($sql, $fields, false, $connection);
+        list($sql, $params) = $this->getInsertSql($model);
+        
+        $lastInsertId = $this->connection->execute($sql, $params, false, $connection);
 
         if ($lastInsertId == null) {
             if ($this->connection->lastInsertId($connection) !== null) {
@@ -756,6 +746,32 @@ abstract class AbstractDao {
         $model->altered = false;
 
         return $this;
+    }
+
+    /**
+     * Get sql for insert a model in database
+     * @param Model $model
+     * @param $paramPrefix
+     * @return array
+     * @throws DaoException
+     */
+    public function getInsertSql(Model $model, $paramPrefix = "")
+    {
+        $sql = "INSERT INTO " . $this->connection->getDatabase() . "." . $this->dbTableName . " ";
+        $fields = $model->toArray(false, true);
+
+        $columns = array();
+        foreach ($fields as $key => $val) {
+            $queryFields[$key] = ":" . $paramPrefix . $key;
+            $columns[] = $this->getField($key)->getDbName();
+            $params[$paramPrefix . $key] = $val;
+        }
+        $sql .= "(" . implode(", ", $columns) . ")";
+        $sql .= " VALUES(";
+        $sql .= implode(", ", $queryFields);
+        $sql .= ");";
+
+        return [$sql, $params];
     }
 
     /**
@@ -784,15 +800,34 @@ abstract class AbstractDao {
         if (!$model->fromDb) {
             throw new DaoException("Try update a record not from db from '$this->modelBundle' '$this->modelName' model");
         }
-        $parms = array();
 
+        list($sql, $parms) = $this->getUpdateSql($model);
+
+        $this->connection->execute($sql, $parms, false, $forceConnection);
+
+        $model->fromDb = true;
+        $model->altered = false;
+
+        return $this;
+    }
+
+    /**
+     * Reuturn sql statement to execute for update model
+     * @param Model $model
+     * @return array
+     * @throws DaoException
+     */
+    public function getUpdateSql(Model $model, $paramPrefix = "")
+    {
+        $parms = array();
+        
         $sql = "UPDATE " . $this->connection->getDatabase() . "." . $this->dbTableName . " set ";
         $fields = $model->toArray(false, true);
 
         foreach ($fields as $key => $val) {
             if($val !== Model::FIELD_NOT_PERSIST) {
-                $queryFields[$key] = $this->getDbNameFromModelName($key) . " = :$key";
-                $parms[$key] = $val;
+                $queryFields[$key] = $this->getDbNameFromModelName($key) . " = :" . $paramPrefix . $key;
+                $parms[$paramPrefix . $key] = $val;
             }
         }
         $sql .= implode(", ", $queryFields);
@@ -804,18 +839,14 @@ abstract class AbstractDao {
         $sql .= " WHERE ";
         $conds = array();
         foreach ($model->getOriginalPrimaryKeys() as $originalPk => $originalValue) {
-            $conds[] = $this->getDbNameFromModelName($originalPk) . " = :" . $originalPk . "OriginalPk";
-            $parms[$originalPk . "OriginalPk"] = $originalValue;
+            $conds[] = $this->getDbNameFromModelName($originalPk) . " = :" . $paramPrefix . $originalPk . "OriginalPk";
+            $parms[$paramPrefix . $originalPk . "OriginalPk"] = $originalValue;
         }
         $sql .= implode(" AND ", $conds);
-
-
-        $this->connection->execute($sql, $parms, false, $forceConnection);
-
-        $model->fromDb = true;
-        $model->altered = false;
-
-        return $this;
+        
+        $sql .= ";";
+        
+        return [$sql, $parms];
     }
 
     /**
@@ -828,21 +859,8 @@ abstract class AbstractDao {
         if (!$model->fromDb) {
             throw new DaoException("Try delete a record not from db from '$this->modelBundle' '$this->modelName' model");
         }
-        $parms = array();
 
-        $sql = "DELETE FROM " . $this->connection->getDatabase() . "." . $this->dbTableName . " ";
-
-        if ($model->getOriginalPrimaryKeys() === null) {
-            $model->setOriginalPrimaryKeys();
-        }
-
-        $sql .= " WHERE ";
-        $conds = array();
-        foreach ($model->getOriginalPrimaryKeys() as $originalPk => $originalValue) {
-            $conds[] = $this->getDbNameFromModelName($originalPk) . " = :" . $originalPk . "OriginalPk";
-            $parms[$originalPk . "OriginalPk"] = $originalValue;
-        }
-        $sql .= implode(" AND ", $conds);
+        list($sql, $parms) = $this->getDeleteSql($model);
 
         if (method_exists($model, "beforeDelete")) {
             $model->beforeDelete();
@@ -858,6 +876,34 @@ abstract class AbstractDao {
         $model->altered = false;
 
         return $this;
+    }
+
+    /**
+     * Get sql for deleting a model
+     * @param Model $model
+     * @param $paramsPrefix
+     * @return array
+     * @throws DaoException
+     */
+    public function getDeleteSql(Model $model, $paramsPrefix = "")
+    {
+        $parms = array();
+
+        $sql = "DELETE FROM " . $this->connection->getDatabase() . "." . $this->dbTableName . " ";
+
+        if ($model->getOriginalPrimaryKeys() === null) {
+            $model->setOriginalPrimaryKeys();
+        }
+
+        $sql .= " WHERE ";
+        $conds = array();
+        foreach ($model->getOriginalPrimaryKeys() as $originalPk => $originalValue) {
+            $conds[] = $this->getDbNameFromModelName($originalPk) . " = :" . $paramsPrefix . $originalPk . "OriginalPk";
+            $parms[$paramsPrefix . $originalPk . "OriginalPk"] = $originalValue;
+        }
+        $sql .= implode(" AND ", $conds) . ";";
+        
+        return [$sql, $parms];
     }
 
     /**
