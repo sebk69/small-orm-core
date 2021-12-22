@@ -770,7 +770,7 @@ abstract class AbstractDao {
         $sql .= " VALUES(";
         $sql .= implode(", ", $queryFields);
         $sql .= ");";
-
+        
         return [$sql, $params];
     }
 

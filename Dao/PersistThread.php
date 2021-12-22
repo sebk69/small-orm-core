@@ -15,11 +15,6 @@ class PersistThread
     /**
      * @var bool
      */
-    protected $withTransaction;
-
-    /**
-     * @var bool
-     */
     protected $transactionStarted = false;
 
     /**
@@ -38,6 +33,16 @@ class PersistThread
     protected $pdo;
 
     /**
+     * @var bool
+     */
+    protected $flushOnInsert = false;
+
+    /**
+     * @var Model
+     */
+    protected $lastInsertedModel = null;
+    
+    /**
      * @param AbstractConnection $connection
      */
     public function __construct(AbstractConnection $connection)
@@ -47,16 +52,36 @@ class PersistThread
     }
 
     /**
+     * Set flush on insert
+     * @param $value
+     * @return $this
+     */
+    public function setFlushOnInsert($value = true)
+    {
+        $this->flushOnInsert = $value;
+        
+        return $this;
+    }
+
+    /**
      * Persist a model in the thread
      * @param Model $model
      * @return $this
      */
     public function pushPersist(Model $model)
     {
+        if ($this->flushOnInsert && $model->fromDb == false) {
+            $this->flush();
+        }
+
         $this->bag[] = [
             "model" => $model,
             "type" => self::PERSIST_TYPE,
         ];
+
+        if ($this->flushOnInsert && $model->fromDb == false) {
+            $this->flush();
+        }
 
         return $this;
     }
@@ -145,6 +170,7 @@ class PersistThread
                 list($sql, $params) = $model->getDao()->getUpdateSql($model, $key . "_");
             } else {
                 list($sql, $params) = $model->getDao()->getInsertSql($model, $key . "_");
+                $this->lastInsertedModel = $model;
             }
 
             if (method_exists($model, "afterSave")) {
@@ -216,8 +242,25 @@ class PersistThread
 
             $statement->execute();
         } else {
-            $this->pool->execute($sql, $params);
+            $this->connection->execute($sql, $params);
         }
+
+        if ($this->flushOnInsert && $this->lastInsertedModel != null) {
+            if (method_exists($this->connection, "getPdo")) {
+                $id = $this->pdo->lastInsertId();
+            } else {
+                $id = $this->connection->lastInsertId();
+            }
+            foreach ($this->lastInsertedModel->getPrimaryKeys() as $key => $value) {
+                if ($value === null) {
+                    $method = "raw" . $key;
+                    $this->lastInsertedModel->$method($id);
+                }
+            }
+            $this->lastInsertedModel = null;
+        }
+        
+        $this->bag = [];
 
         return $this;
     }
