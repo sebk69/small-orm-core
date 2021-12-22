@@ -35,7 +35,7 @@ class PersistThread
     /**
      * @var bool
      */
-    protected $flushOnInsert = false;
+    protected $flushOnInsert = true;
 
     /**
      * @var Model
