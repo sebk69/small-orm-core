@@ -175,7 +175,7 @@ class PersistThread
                 $this->transactionStarted = false;
                 $sql = "COMMIT;";
                 break;
-            case self::ROLLBACK_TYPE_TYPE:
+            case self::ROLLBACK_TYPE:
                 $this->transactionStarted = false;
                 $sql = "COMMIT;";
                 break;
@@ -186,7 +186,7 @@ class PersistThread
 
     /**
      * Flush thread
-     * @return void
+     * @return $this
      * @throws DaoException
      */
     public function flush()
@@ -198,6 +198,10 @@ class PersistThread
             list($atomicSql, $atomicparams) = $this->getSqlForModel($element["model"], $element["type"], $key);
             $sql .= $atomicSql;
             $params = array_merge($params, $atomicparams);
+        }
+
+        if (empty($sql)) {
+            return $this;
         }
 
         if (method_exists($this->connection, "getPdo")) {
@@ -214,11 +218,13 @@ class PersistThread
         } else {
             $this->pool->execute($sql, $params);
         }
+
+        return $this;
     }
 
     /**
      * Close thread
-     * @return void
+     * @return $this
      */
     public function close()
     {
@@ -226,5 +232,7 @@ class PersistThread
             $this->connection->pool->put($this->pdo);
             $this->pdo = null;
         }
+
+        return $this;
     }
 }
