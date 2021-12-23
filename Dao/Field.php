@@ -15,6 +15,7 @@ class Field
     const TYPE_STRING = "TYPE_STRING";
     const TYPE_PHP_FILTER = "TYPE_PHP_FILTER";
     const TYPE_DATETIME = "TYPE_DATETIME";
+    const TYPE_DATE = "TYPE_DATE";
     const TYPE_BOOLEAN = "TYPE_BOOLEAN";
     const TYPE_FLOAT = "TYPE_FLOAT";
     const TYPE_INT = "TYPE_INT";
@@ -86,6 +87,21 @@ class Field
                 // Default format
                 if($format === null) {
                     $format = "Y-m-d H:i:s";
+                }
+                // check format
+                try {
+                    $date = new \DateTime();
+                    $date->format($format);
+                } catch (\Exception $e) {
+                    throw new \Exception("Malformed format for field '$this->modelName'");
+                }
+                // set format
+                $this->format = $format;
+                break;
+            case static::TYPE_DATE:
+                // Default format
+                if($format === null) {
+                    $format = "Y-m-d";
                 }
                 // check format
                 try {

@@ -73,13 +73,15 @@ abstract class AbstractRedisDao extends AbstractDao
 
         $result = [];
         foreach ($records as $record) {
-            $model = $this->makeModelFromStdClass($record);
+            if ($record!= null) {
+                $model = $this->makeModelFromStdClass($record);
 
-            if (method_exists($model, "onLoad")) {
-                $model->onLoad();
+                if (method_exists($model, "onLoad")) {
+                    $model->onLoad();
+                }
+
+                $result[] = $model;
             }
-
-            $result[] = $model;
         }
         
         if ($asCollection) {

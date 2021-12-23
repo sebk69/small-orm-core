@@ -606,7 +606,7 @@ abstract class AbstractDao {
         $result = array();
         foreach ($this->getFields() as $field) {
             $fieldAlias = $queryRelation->getFieldAliasForSql($field, false);
-            if (isset($record[$fieldAlias])) {
+            if (array_key_exists($fieldAlias, $record)) {
                 $result[$field->getModelName()] = $record[$fieldAlias];
             } else {
                 throw new DaoException("Record not match query");

@@ -17,6 +17,7 @@ class Model implements \JsonSerializable {
 
     const FIELD_NOT_PERSIST = "FIELD_NOT_PERSIST";
     const MYSQL_FORMAT_DATETIME = "Y-m-d H:i:s";
+    const MYSQL_FORMAT_DATE = "Y-m-d";
 
     private $modelName;
     private $bundle;
@@ -108,7 +109,8 @@ class Model implements \JsonSerializable {
                                 return null;
                             }
                         case Field::TYPE_DATETIME:
-                            if($this->fields[$name] !== null) {
+                        case Field::TYPE_DATE:
+                        if($this->fields[$name] !== null) {
                                 return \DateTime::createFromFormat($this->types[$name]["format"], $this->fields[$name]);
                             } else {
                                 return null;
@@ -156,6 +158,13 @@ class Model implements \JsonSerializable {
                         case Field::TYPE_DATETIME:
                             if($args[0] !== null) {
                                 $this->fields[$name] = $args[0]->format(static::MYSQL_FORMAT_DATETIME);
+                            } else {
+                                $this->fields[$name] = null;
+                            }
+                            break;
+                        case Field::TYPE_DATE:
+                            if($args[0] !== null) {
+                                $this->fields[$name] = $args[0]->format(static::MYSQL_FORMAT_DATE);
                             } else {
                                 $this->fields[$name] = null;
                             }
@@ -361,6 +370,14 @@ class Model implements \JsonSerializable {
                     case Field::TYPE_DATETIME:
                         if($value !== null) {
                             $date = \DateTime::createFromFormat(self::MYSQL_FORMAT_DATETIME, $value);
+                            $result[$key] = $date->format($this->types[$key]["format"]);
+                        } else {
+                            $result[$key] = null;
+                        }
+                        break;
+                    case Field::TYPE_DATE:
+                        if($value !== null) {
+                            $date = \DateTime::createFromFormat(self::MYSQL_FORMAT_DATE, $value);
                             $result[$key] = $date->format($this->types[$key]["format"]);
                         } else {
                             $result[$key] = null;
