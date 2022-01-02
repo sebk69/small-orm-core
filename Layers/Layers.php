@@ -156,7 +156,7 @@ class Layers
 
         // Foreach connections
         foreach ($connectionsFactory->getNamesAsArray() as $connectionName) {
-            // Create layers tables if not exists
+            // Create database and layers tables if not exists
             $connection = $connectionsFactory->get($connectionName);
             $connection->execute("CREATE TABLE IF NOT EXISTS `_small_orm_layers` ( `id` INT NOT NULL AUTO_INCREMENT , `bundle` VARCHAR(255) NOT NULL , `layer` VARCHAR(255) NOT NULL , PRIMARY KEY (`id`)) ENGINE = InnoDB;");
 

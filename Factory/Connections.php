@@ -37,6 +37,38 @@ class Connections
     }
 
     /**
+     * Get connection class for a config
+     * @param array $connectionConfig
+     * @return void
+     */
+    private function getClass($type)
+    {
+        // Get connection class name
+        $typeExploded = explode("-", $type);
+        $decomposedClass = [];
+        foreach ($typeExploded as $item) {
+            $decomposedClass[] = ucfirst($item);
+        }
+
+        foreach (static::$namespaces as $namespace) {
+            $class = $namespace . 'Connection' . implode("", $decomposedClass);
+            if (defined("PHP_SAPI") && PHP_SAPI == "cli" && method_exists($class, "getFallbackForCli")) {
+                $class = $this->getClass($class::getFallbackForCli());
+            }
+
+            if (class_exists($class)) {
+                break;
+            }
+        }
+
+        if (!isset($class)) {
+            throw new \Exception("Connection type ($type) not exists !");
+        }
+
+        return $class;
+    }
+
+    /**
      * Get a connection
      * @param type $connectionName
      * @return AbstractConnection
@@ -55,20 +87,7 @@ class Connections
         if (!isset(static::$connections[$connectionName]) || $new) {
             // Get config for connection
             $connectionConfig = $this->config[$connectionName];
-
-            // Get connection class name
-            $typeExploded = explode("-", $connectionConfig['type']);
-            $decomposedClass = [];
-            foreach ($typeExploded as $item) {
-                $decomposedClass[] = ucfirst($item);
-            }
-
-            foreach (static::$namespaces as $namespace) {
-                $class = $namespace . 'Connection' . implode("", $decomposedClass);
-                if (class_exists($class)) {
-                    break;
-                }
-            }
+            $class = $this->getClass($connectionConfig["type"]);
 
             // Check connection type exists
             if (!class_exists($class)) {
