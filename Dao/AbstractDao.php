@@ -714,8 +714,10 @@ abstract class AbstractDao {
 
     /**
      * Insert model in database
-     * @param \Sebk\SmallOrmCore\Dao\Model $model
-     * @return \Sebk\SmallOrmCore\Dao\AbstractDao
+     * @param Model $model
+     * @return $this
+     * @throws DaoException
+     * @throws \Sebk\SmallOrmCore\Database\ConnectionException
      */
     protected function insert(Model $model) {
         $connection = $this->connection->connect();
@@ -792,9 +794,11 @@ abstract class AbstractDao {
 
     /**
      * Update a record
-     * @param \Sebk\SmallOrmCore\Dao\Model $model
-     * @return \Sebk\SmallOrmCore\Dao\AbstractDao
+     * @param Model $model
+     * @param $forceConnection
+     * @return $this
      * @throws DaoException
+     * @throws \Sebk\SmallOrmCore\Database\ConnectionException
      */
     protected function update(Model $model, $forceConnection = null) {
         if (!$model->fromDb) {
@@ -814,6 +818,7 @@ abstract class AbstractDao {
     /**
      * Reuturn sql statement to execute for update model
      * @param Model $model
+     * @param $paramPrefix
      * @return array
      * @throws DaoException
      */

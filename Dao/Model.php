@@ -149,31 +149,31 @@ class Model implements \JsonSerializable {
                             $this->fields[$name] = $args[0];
                             break;
                         case Field::TYPE_BOOLEAN:
-                            if($args[0] !== null) {
+                            if($args[0] !== null && $args[0] != Model::FIELD_NOT_PERSIST) {
                                 $this->fields[$name] = $args[0] ? $this->types[$name]["format"][1] : $this->types[$name]["format"][0];
                             } else {
-                                $this->fields[$name] = null;
+                                $this->fields[$name] = $args[0];
                             }
                             break;
                         case Field::TYPE_DATETIME:
-                            if($args[0] !== null) {
+                            if($args[0] !== null && $args[0] != Model::FIELD_NOT_PERSIST) {
                                 $this->fields[$name] = $args[0]->format(static::MYSQL_FORMAT_DATETIME);
                             } else {
-                                $this->fields[$name] = null;
+                                $this->fields[$name] = $args[0];
                             }
                             break;
                         case Field::TYPE_DATE:
-                            if($args[0] !== null) {
+                            if($args[0] !== null && $args[0] != Model::FIELD_NOT_PERSIST) {
                                 $this->fields[$name] = $args[0]->format(static::MYSQL_FORMAT_DATE);
                             } else {
-                                $this->fields[$name] = null;
+                                $this->fields[$name] = $args[0];
                             }
                             break;
                         case Field::TYPE_TIMESTAMP:
-                            if($args[0] !== 0 && !empty($args[0])) {
+                            if($args[0] !== 0 && !empty($args[0]) && $args[0] != Model::FIELD_NOT_PERSIST) {
                                 $this->fields[$name] = $args[0]->format("U");
                             } else {
-                                $this->fields[$name] = 0;
+                                $this->fields[$name] = $args[0];
                             }
                             break;
                         case Field::TYPE_FLOAT:
@@ -183,8 +183,7 @@ class Model implements \JsonSerializable {
 
                             $type = gettype($args[0]);
 
-                            $isFloat = false;
-                            if ($type === "float") {
+                            if ($type === "float" || $args[0] != Model::FIELD_NOT_PERSIST) {
                                 $isFloat = true;
                             } else {
                                 $isFloat = filter_var($args[0], FILTER_VALIDATE_FLOAT);
@@ -192,16 +191,20 @@ class Model implements \JsonSerializable {
                             if (!$isFloat) {
                                 throw new \Exception("Field must be float ('" . lcfirst($args[0]) . "')");
                             }
-                            $this->fields[$name] = (float)$args[0];
+                            $this->fields[$name] = $args[0];
                             break;
                         case Field::TYPE_INT:
-                            if (!ctype_digit((string)$args[0])) {
+                            if (!ctype_digit((string)$args[0]) && $args[0] != Model::FIELD_NOT_PERSIST) {
                                 throw new \Exception("Field must be int ('" . lcfirst($args[0]) . "')");
                             }
-                            $this->fields[$name] = (int)$args[0];
+                            $this->fields[$name] = $args[0];
                             break;
                         case Field::TYPE_JSON:
-                            $this->fields[$name] = json_encode($args[0]);
+                            if ($args[0] != Model::FIELD_NOT_PERSIST) {
+                                $this->fields[$name] = json_encode($args[0]);
+                            } else {
+                                $this->fields[$name] = $args[0];
+                            }
                             break;
                     }
 
@@ -357,48 +360,52 @@ class Model implements \JsonSerializable {
                         $result[$key] = $value;
                         break;
                     case Field::TYPE_BOOLEAN:
-                        if($value !== null) {
-                            if ($fromJsonSeriaze) {
-                                $result[$key] = $value == $this->types[$key]["format"][1] ? true : false;
-                            } else {
-                                $result[$key] = $value;
-                            }
+                        if ($fromJsonSeriaze && $value != Model::FIELD_NOT_PERSIST) {
+                            $result[$key] = $value == $this->types[$key]["format"][1] ? true : false;
                         } else {
-                            $result[$key] = null;
+                            $result[$key] = $value;
                         }
                         break;
                     case Field::TYPE_DATETIME:
-                        if($value !== null) {
+                        if($value !== null && $value != Model::FIELD_NOT_PERSIST) {
                             $date = \DateTime::createFromFormat(self::MYSQL_FORMAT_DATETIME, $value);
                             $result[$key] = $date->format($this->types[$key]["format"]);
                         } else {
-                            $result[$key] = null;
+                            $result[$key] = $value;
                         }
                         break;
                     case Field::TYPE_DATE:
-                        if($value !== null) {
+                        if($value !== null && $value != Model::FIELD_NOT_PERSIST) {
                             $date = \DateTime::createFromFormat(self::MYSQL_FORMAT_DATE, $value);
                             $result[$key] = $date->format($this->types[$key]["format"]);
                         } else {
-                            $result[$key] = null;
+                            $result[$key] = $value;
                         }
                         break;
                     case Field::TYPE_TIMESTAMP:
-                        if(!empty($value)) {
+                        if(!empty($value) && $value != Model::FIELD_NOT_PERSIST) {
                             $date = \DateTime::createFromFormat("U", $value);
                             $result[$key] = $date->format($this->types[$key]["format"]);
                         } else {
-                            $result[$key] = null;
+                            $result[$key] = $value;
                         }
                         break;
                     case Field::TYPE_FLOAT:
-                        $result[$key] = (float)$value;
+                        if($value !== null && $value != Model::FIELD_NOT_PERSIST) {
+                            $result[$key] = (float)$value;
+                        } else {
+                            $result[$key] = $value;
+                        }
                         break;
                     case Field::TYPE_INT:
-                        $result[$key] = (int)$value;
+                        if($value !== null && $value != Model::FIELD_NOT_PERSIST) {
+                            $result[$key] = (int)$value;
+                        } else {
+                            $result[$key] = $value;
+                        }
                         break;
                     case Field::TYPE_JSON:
-                        if ($fromJsonSeriaze) {
+                        if ($fromJsonSeriaze && !$value != Model::FIELD_NOT_PERSIST) {
                             $result[$key] = json_decode($value, $this->types[$key]["format"]);
                         } else {
                             $result[$key] = $value;
