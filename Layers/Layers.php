@@ -15,7 +15,7 @@ class Layers
     protected $connections;
     protected $config;
     protected $container;
-    protected $layers;
+    protected $layers = [];
 
     /**
      * Layers constructor.
@@ -156,19 +156,21 @@ class Layers
 
         // Foreach connections
         foreach ($connectionsFactory->getNamesAsArray() as $connectionName) {
-            // Create database and layers tables if not exists
-            $connection = $connectionsFactory->get($connectionName);
-            $connection->execute("CREATE TABLE IF NOT EXISTS `_small_orm_layers` ( `id` INT NOT NULL AUTO_INCREMENT , `bundle` VARCHAR(255) NOT NULL , `layer` VARCHAR(255) NOT NULL , PRIMARY KEY (`id`)) ENGINE = InnoDB;");
+            try {
+                // Create database and layers tables if not exists
+                $connection = $connectionsFactory->get($connectionName);
+                $connection->execute("CREATE TABLE IF NOT EXISTS `_small_orm_layers` ( `id` INT NOT NULL AUTO_INCREMENT , `bundle` VARCHAR(255) NOT NULL , `layer` VARCHAR(255) NOT NULL , PRIMARY KEY (`id`)) ENGINE = InnoDB;");
 
-            // List already executed layers
-            $result = $connection->execute("SELECT `bundle`, `layer` from `_small_orm_layers`");
-            foreach ($result as $record) {
-                // And store them
-                if(!isset($executedLayers[$record["bundle"]])) {
-                    $executedLayers[$record["bundle"]] = [];
+                // List already executed layers
+                $result = $connection->execute("SELECT `bundle`, `layer` from `_small_orm_layers`");
+                foreach ($result as $record) {
+                    // And store them
+                    if (!isset($executedLayers[$record["bundle"]])) {
+                        $executedLayers[$record["bundle"]] = [];
+                    }
+                    $executedLayers[$record["bundle"]][$record["layer"]] = true;
                 }
-                $executedLayers[$record["bundle"]][$record["layer"]] = true;
-            }
+            } catch (\Exception $e) {}
         }
 
         return $executedLayers;
