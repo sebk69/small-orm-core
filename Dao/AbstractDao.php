@@ -575,13 +575,9 @@ abstract class AbstractDao {
         $empty = true;
         foreach ($this->getPrimaryKeys() as $field) {
             $fieldAlias = $queryRelation->getFieldAliasForSql($field, false);
-            if ($record[$fieldAlias]) {
-                if (isset($record[$fieldAlias]) != null) {
-                    $empty = false;
-                }
+            if (isset($record[$fieldAlias])) {
                 $result[$field->getModelName()] = $record[$fieldAlias];
-            } else {
-                throw new DaoException("Record not match query");
+                $empty = false;
             }
         }
 
