@@ -52,9 +52,6 @@ class Connections
 
         foreach (static::$namespaces as $namespace) {
             $class = $namespace . 'Connection' . implode("", $decomposedClass);
-            if (defined("PHP_SAPI") && PHP_SAPI == "cli" && method_exists($class, "getFallbackForCli")) {
-                $class = $this->getClass($class::getFallbackForCli());
-            }
 
             if (class_exists($class)) {
                 break;
