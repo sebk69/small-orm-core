@@ -28,13 +28,6 @@ class ConnectionMysql extends AbstractConnection
             } catch (\PDOException $e) {
                 throw new ConnectionException($e->getMessage());
             }
-
-            // Create database if not exists
-            $statement = $this->pdo->prepare("create database if not exists `$this->database`;use `$this->database`;");
-            if(!$statement->execute()) {
-                $errInfo = $statement->errorInfo();
-                throw new ConnectionException("Fail to execute request : SQLSTATE[".$errInfo[0]."][".$errInfo[1]."] ".$errInfo[2]);
-            }
         }
 
         return $this->pdo;
@@ -58,7 +51,7 @@ class ConnectionMysql extends AbstractConnection
 
         if ($pdo->getAttribute(\PDO::ATTR_SERVER_INFO)=='MySQL server has gone away') {
             $pdo = null;
-            $this->connect();
+            $this->connect(true);
         }
 
         $statement = $pdo->prepare($sql);
@@ -72,7 +65,7 @@ class ConnectionMysql extends AbstractConnection
             $errInfo = $statement->errorInfo();
             if($errInfo[0] == "HY000" && $errInfo[1] == "2006" && !$retry) {
                 $pdo = null;
-                $this->connect();
+                $this->connect(true);
                 return $this->execute($sql, $params, true);
             } else {
                 throw new ConnectionException("Fail to execute request : SQLSTATE[" . $errInfo[0] . "][" . $errInfo[1] . "] " . $errInfo[2]);

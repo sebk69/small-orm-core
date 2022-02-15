@@ -53,7 +53,7 @@ class ConnectionRedis extends AbstractConnection
             throw new \Exception("Fail to query redis : \$param['key'] must be defined");
         }
 
-        $con = $this->redis->get();
+        $con = $this->redis;
         switch ($sql) {
             case "get":
                 $result = $this->get($params["key"], $con);
@@ -69,7 +69,6 @@ class ConnectionRedis extends AbstractConnection
             default:
                 throw new \Exception("Redis instruction not found ! ($sql)");
         }
-        $this->redis->put($con);
 
         return $result;
     }
