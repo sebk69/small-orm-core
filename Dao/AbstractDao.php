@@ -538,6 +538,8 @@ abstract class AbstractDao {
         if (count($results) == 1) {
             $method = "raw" . $alias;
             $model->$method($results[0]);
+        } else if (count($results) > 1) {
+            throw new DaoEmptyException("Multiple result for a load to one ($alias)");
         }
     }
 
