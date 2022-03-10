@@ -127,4 +127,14 @@ class Connections
 
         return $array;
     }
+
+    /**
+     * Force all connections to reconnect
+     */
+    public function reconnectAll()
+    {
+        foreach (self::$connections as $connection) {
+            $connection->connect(true);
+        }
+    }
 }

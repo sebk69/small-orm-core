@@ -24,7 +24,7 @@ class ConnectionMysql extends AbstractConnection
         $connectionString = "mysql:dbname=$this->database;host=$this->host;charset=$this->encoding";
         if ($this->pdo == null || $forceReconnect) {
             try {
-                $this->pdo = new \PDO($connectionString, $this->user, $this->password);
+                $this->pdo = new \PDO($connectionString, $this->user, $this->password, [\PDO::ATTR_ERRMODE=>\PDO::ERRMODE_EXCEPTION]);
             } catch (\PDOException $e) {
                 throw new ConnectionException($e->getMessage());
             }
@@ -49,21 +49,18 @@ class ConnectionMysql extends AbstractConnection
             $pdo = $forceConnection;
         }
 
-        if ($pdo->getAttribute(\PDO::ATTR_SERVER_INFO)=='MySQL server has gone away') {
-            $pdo = null;
-            $this->connect(true);
-        }
+        try {
+            $statement = $pdo->prepare($sql);
 
-        $statement = $pdo->prepare($sql);
-
-        foreach ($params as $param => $value) {
-            $statement->bindValue(":".$param, $value);
-        }
-        if ($statement->execute()) {
-            return $statement->fetchAll(\PDO::FETCH_ASSOC);
-        } else {
+            foreach ($params as $param => $value) {
+                $statement->bindValue(":".$param, $value);
+            }
+            if ($statement->execute()) {
+                return $statement->fetchAll(\PDO::FETCH_ASSOC);
+            }
+        } catch(\Exception $e) {
             $errInfo = $statement->errorInfo();
-            if($errInfo[0] == "HY000" && $errInfo[1] == "2006" && !$retry) {
+	        if($errInfo[0] == "HY000" && $errInfo[1] == "2006" && !$retry) {
                 $pdo = null;
                 $this->connect(true);
                 return $this->execute($sql, $params, true);

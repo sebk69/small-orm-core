@@ -494,7 +494,7 @@ class Model implements \JsonSerializable {
      * Json serialisation of model
      * @return array
      */
-    public function jsonSerialize()
+    public function jsonSerialize(): mixed
     {
         if (is_array($this->toArray(true, false, true))) {
             return $this->toUtf8Array($this->toArray(true, false, true));

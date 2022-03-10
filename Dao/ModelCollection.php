@@ -39,7 +39,7 @@ class ModelCollection implements \IteratorAggregate, \ArrayAccess, \JsonSerializ
      * @param string $key
      * @return boolean
      */
-    public function offsetExists($key)
+    public function offsetExists(mixed $key): bool
     {
         if (array_key_exists($key, $this->objects)) {
             return true;
@@ -54,7 +54,7 @@ class ModelCollection implements \IteratorAggregate, \ArrayAccess, \JsonSerializ
      * @return Model
      * @throws DaoException
      */
-    public function offsetGet($key)
+    public function offsetGet($key): mixed
     {
         if (array_key_exists($key, $this->objects)) {
             return $this->objects[$key];
@@ -69,7 +69,7 @@ class ModelCollection implements \IteratorAggregate, \ArrayAccess, \JsonSerializ
      * @param \Sebk\SmallOrmCore\Dao\Model $value
      * @throws DaoException
      */
-    public function offsetSet($key, $value)
+    public function offsetSet(mixed $key, mixed $value): void
     {
         if (is_null($key) && ($value instanceof Model || $value === null)) {
             $this->objects[] = $value;
@@ -88,16 +88,16 @@ class ModelCollection implements \IteratorAggregate, \ArrayAccess, \JsonSerializ
      * @param string $key
      * @throws DaoException
      */
-    public function offsetUnset($key)
+    public function offsetUnset(mixed $offset): void
     {
-        if (array_key_exists($key, $this->objects)) {
-            unset($this->objects[$key]);
+        if (array_key_exists($offset, $this->objects)) {
+            unset($this->objects[$offset]);
         }
 
-        throw new DaoException("Offset '$key' doesn't exists");
+        throw new DaoException("Offset '$offset' doesn't exists");
     }
 
-    public function jsonSerialize() {
+    public function jsonSerialize(): mixed {
         $result = array();
 
         foreach($this->objects as $key => $value) {
@@ -117,7 +117,7 @@ class ModelCollection implements \IteratorAggregate, \ArrayAccess, \JsonSerializ
         return $result;
     }
 
-    function getIterator()
+    function getIterator(): \Traversable
     {
         return new \ArrayIterator($this->objects);
     }
