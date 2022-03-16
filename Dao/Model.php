@@ -156,24 +156,36 @@ class Model implements \JsonSerializable {
                             }
                             break;
                         case Field::TYPE_DATETIME:
-                            if($args[0] !== null && $args[0] != Model::FIELD_NOT_PERSIST) {
-                                $this->fields[$name] = $args[0]->format(static::MYSQL_FORMAT_DATETIME);
+                            if ($args[0] instanceof \DateTime) {
+                                if ($args[0] !== null && $args[0] != Model::FIELD_NOT_PERSIST) {
+                                    $this->fields[$name] = $args[0]->format(static::MYSQL_FORMAT_DATETIME);
+                                } else {
+                                    $this->fields[$name] = $args[0];
+                                }
                             } else {
-                                $this->fields[$name] = $args[0];
+                                throw new ModelException("Setter $method of model ($this->modelName) must be of type DateTime");
                             }
                             break;
                         case Field::TYPE_DATE:
-                            if($args[0] !== null && $args[0] != Model::FIELD_NOT_PERSIST) {
-                                $this->fields[$name] = $args[0]->format(static::MYSQL_FORMAT_DATE);
+                            if ($args[0] instanceof \DateTime) {
+                                if($args[0] !== null && $args[0] != Model::FIELD_NOT_PERSIST) {
+                                    $this->fields[$name] = $args[0]->format(static::MYSQL_FORMAT_DATE);
+                                } else {
+                                    $this->fields[$name] = $args[0];
+                                }
                             } else {
-                                $this->fields[$name] = $args[0];
+                                throw new ModelException("Setter $method of model ($this->modelName) must be of type DateTime");
                             }
                             break;
                         case Field::TYPE_TIMESTAMP:
-                            if($args[0] !== 0 && !empty($args[0]) && $args[0] != Model::FIELD_NOT_PERSIST) {
-                                $this->fields[$name] = $args[0]->format("U");
+                            if ($args[0] instanceof \DateTime) {
+                                if($args[0] !== 0 && !empty($args[0]) && $args[0] != Model::FIELD_NOT_PERSIST) {
+                                    $this->fields[$name] = $args[0]->format("U");
+                                } else {
+                                    $this->fields[$name] = $args[0];
+                                }
                             } else {
-                                $this->fields[$name] = $args[0];
+                                throw new ModelException("Setter on field timestamp of model ($this->modelName) must be of type DateTime");
                             }
                             break;
                         case Field::TYPE_FLOAT:
