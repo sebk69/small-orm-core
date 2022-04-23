@@ -941,7 +941,7 @@ abstract class AbstractDao {
         $model = $this->newModel();
 
         foreach ($stdClass as $prop => $value) {
-            $method = "raw" . $prop;
+            $method = "set" . $prop;
             if (!is_object($value) && !is_array($value)) {
                 try {
                     $model->$method($value);

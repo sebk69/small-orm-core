@@ -203,7 +203,7 @@ class PersistThread
                 break;
             case self::ROLLBACK_TYPE:
                 $this->transactionStarted = false;
-                $sql = "COMMIT;";
+                $sql = "ROOLBACK;";
                 break;
         }
 
