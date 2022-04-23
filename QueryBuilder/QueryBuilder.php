@@ -30,6 +30,7 @@ class QueryBuilder {
     protected $rawWhere = null;
     protected $rawOrderBy = null;
     protected $rawGroupBy = null;
+    protected $isForUpdate = false;
 
     /**
      * Construct QueryBuilder
@@ -427,6 +428,10 @@ class QueryBuilder {
             $sql .= " LIMIT " . $this->offset . ", " . $this->limit;
         }
 
+        if ($this->isForUpdate) {
+            $sql .= " FOR UPDATE ";
+        }
+
         return $sql;
     }
 
@@ -555,18 +560,13 @@ class QueryBuilder {
     }
 
     /**
-     * Get raw result of query
-     * @return array
-     *
-      public function getRawResult()
-      {
-      return $this->from->getDao()->getRawResult($this);
-      }
-
-      public function getResult()
-      {
-      return $this->from->getDao()->populate($this, $this->getRawResult());
-      }
-     *
+     * Add forUpdate close
+     * @return $this
      */
+    public function forUpdate()
+    {
+        $this->isForUpdate = true;
+
+        return $this;
+    }
 }
