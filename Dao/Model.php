@@ -140,6 +140,10 @@ class Model implements \JsonSerializable {
                 throw new ModelException("Method '$method' does not exists");
                 break;
             case "set":
+                if ($args[0] == null) {
+                    $this->fields[$name] = $args[0];
+                    return null;
+                }
                 if ($typeField == "primaryKeys") {
                     $this->primaryKeys[$name] = $args[0];
                 } elseif ($typeField == "field") {
