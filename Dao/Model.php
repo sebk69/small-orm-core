@@ -140,13 +140,13 @@ class Model implements \JsonSerializable {
                 throw new ModelException("Method '$method' does not exists");
                 break;
             case "set":
-                if ($args[0] == null) {
-                    $this->fields[$name] = $args[0];
-                    return $this;
-                }
                 if ($typeField == "primaryKeys") {
                     $this->primaryKeys[$name] = $args[0];
                 } elseif ($typeField == "field") {
+                    if ($args[0] == null) {
+                        $this->fields[$name] = $args[0];
+                        return $this;
+                    }
                     switch($this->types[$name]["type"]) {
                         case Field::TYPE_STRING:
                         case Field::TYPE_PHP_FILTER:
