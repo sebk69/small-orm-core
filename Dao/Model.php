@@ -143,7 +143,7 @@ class Model implements \JsonSerializable {
                 if ($typeField == "primaryKeys") {
                     $this->primaryKeys[$name] = $args[0];
                 } elseif ($typeField == "field") {
-                    if ($args[0] == null) {
+                    if ($args[0] === null) {
                         $this->fields[$name] = $args[0];
                         return $this;
                     }
