@@ -122,10 +122,15 @@ class Model implements \JsonSerializable {
                                 return null;
                             }
                         case Field::TYPE_FLOAT:
-                            return (float)$this->fields[$name];
-                            break;
+                            if ($this->fields[$name] !== null) {
+                                return (float)$this->fields[$name];
+                            }
+                            return null;
                         case Field::TYPE_INT:
-                            return (int)$this->fields[$name];
+                            if ($this->fields[$name] !== null) {
+                                return (int)$this->fields[$name];
+                            }
+                            return null;
                         case Field::TYPE_JSON:
                             return json_decode($this->fields[$name], $this->types[$name]["format"]);
                     }
