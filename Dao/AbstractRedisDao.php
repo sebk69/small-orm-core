@@ -211,4 +211,16 @@ abstract class AbstractRedisDao extends AbstractDao
         
         return $this->getResult($query);
     }
+
+    public function searchKeys(string $query): array
+    {
+        $rawResult = $this->connection->execute('keys', [$this->getDbTableName(false) => $query]);
+
+        $result = [];
+        foreach ($rawResult as $value) {
+            $result[] = substr($value, strlen($this->getDbTableName(false)) + 1);
+        }
+
+        return $result;
+    }
 }

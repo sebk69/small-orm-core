@@ -75,7 +75,7 @@ class QueryBuilder
         $this->instruction = "get";
 
         if ($key != "") {
-            // If no key append key to dbTableName
+            // If key append key to dbTableName
             $fullkey = $this->dao->getDbTableName(false) . ":" . $key;
         } else {
             // else get dbTableName as key
