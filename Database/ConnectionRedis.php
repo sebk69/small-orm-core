@@ -29,8 +29,9 @@ class ConnectionRedis extends AbstractConnection
     public function connect($forceReconnect = false)
     {
         if ($this->redis == null) {
-            $this->redis = new \Redis();
-            $this->redis->connect($this->host);
+            $servers = explode(",", $this->host);
+            $redis = new \Predis\Client($servers, count($servers) > 1 ? ["cluster" => "redis-cluster", "exceptions" => true, "async_connect" => false] : null);
+            $redis->connect();
         }
 
         return $this->redis;
