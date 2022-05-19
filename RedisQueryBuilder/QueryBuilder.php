@@ -142,10 +142,10 @@ class QueryBuilder
         
         if ($key != "") {
             // If no key append key to dbTableName
-            $fullkey = $this->dao->getDbTableName() . ":" . $key;
+            $fullkey = $this->dao->getDbTableName(false) . ":" . $key;
         } else {
             // else get dbTableName as key
-            $fullkey = $this->dao->getDbTableName();
+            $fullkey = $this->dao->getDbTableName(false);
         }
         $this->params["key"][] = $fullkey;
         
