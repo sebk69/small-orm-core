@@ -941,6 +941,24 @@ abstract class AbstractDao {
         $model = $this->newModel();
 
         foreach ($stdClass as $prop => $value) {
+            try {
+                // Convert value if needed
+                switch ($this->getField($prop)->getType()) {
+                    case Field::TYPE_DATETIME:
+                    case Field::TYPE_DATE:
+                    case Field::TYPE_TIMESTAMP:
+                        if (!$value instanceof \DateTime) {
+                            $value = \DateTime::createFromFormat($this->getField($prop)->getFormat(), $value);
+                        }
+                        break;
+                    case Field::TYPE_BOOLEAN:
+                        if ($value !== true && $value !== false) {
+                            $value = $value == $this->getField($prop)->getFormat()[1] ? true : false;
+                        }
+                        break;
+                }
+            } catch(DaoException $e) {}
+
             $method = "set" . $prop;
             if (!is_object($value) && !is_array($value)) {
                 try {
