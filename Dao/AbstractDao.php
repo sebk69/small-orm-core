@@ -863,12 +863,12 @@ abstract class AbstractDao {
             throw new DaoException("Try delete a record not from db from '$this->modelBundle' '$this->modelName' model");
         }
 
-        list($sql, $parms) = $this->getDeleteSql($model);
-
         if (method_exists($model, "beforeDelete")) {
             $model->beforeDelete();
         }
 
+        list($sql, $parms) = $this->getDeleteSql($model);
+        
         $this->connection->execute($sql, $parms, false, $forceConnection);
 
         if (method_exists($model, "afterDelete")) {

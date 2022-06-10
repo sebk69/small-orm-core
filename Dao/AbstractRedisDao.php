@@ -144,15 +144,15 @@ abstract class AbstractRedisDao extends AbstractDao
      */
     public function delete(Model $model, $forceConnection = null)
     {
-        // Create query
-        $query = $this->createQueryBuilder()
-            ->del($model->getKey())
-        ;
-
         // Execute beforeDelete method if exists
         if (method_exists($model, "beforeDelete")) {
             $model->beforeDelete();
         }
+
+        // Create query
+        $query = $this->createQueryBuilder()
+            ->del($model->getKey())
+        ;
 
         // Perform delete
         $this->connection->execute($query->getInstruction(), $query->getParams(), false, $forceConnection);

@@ -96,8 +96,8 @@ class Condition
             case "%":
             case "like":
             case "not like":
-            case "not regexpr":
-            case "regexpr":
+            case "not regexp":
+            case "regexp":
                 if (!in_array($this->type1,
                         array(
                         static::TYPE_FIELD,
@@ -200,8 +200,8 @@ class Condition
             case "%":
             case "like":
             case "not like":
-            case "not regexpr":
-            case "regexpr":
+            case "not regexp":
+            case "regexp":
             case "is":
             case "is not":
             case "in":
