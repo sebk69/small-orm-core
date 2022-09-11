@@ -9,6 +9,7 @@
 namespace Sebk\SmallOrmCore\Dao;
 
 use Sebk\SmallOrmCore\Database\AbstractConnection;
+use Sebk\SmallOrmCore\Factory\Connections;
 use Sebk\SmallOrmCore\Factory\Dao;
 use Sebk\SmallOrmCore\QueryBuilder\QueryBuilder;
 use Sebk\SmallOrmCore\QueryBuilder\UpdateBuilder;
@@ -20,11 +21,10 @@ use Sebk\SmallOrmCore\QueryBuilder\DeleteBuilder;
 abstract class AbstractDao {
 
     protected $connection;
+    protected $connectionName;
     protected $daoFactory;
-    protected $modelNamespace;
     protected $container;
-    private $modelName;
-    private $modelBundle;
+    private $modelClass;
     private $dbTableName;
     private $primaryKeys = array();
     private $fields = array();
@@ -32,15 +32,13 @@ abstract class AbstractDao {
     private $toMany = array();
     private $defaultValues = array();
 
-    public function __construct(AbstractConnection $connection, Dao $daoFactory, $modelNamespace, $modelName, $modelBundle, $container) {
-        $this->connection = $connection;
+    public function __construct(Connections $connections, Dao $daoFactory, $container) {
         $this->daoFactory = $daoFactory;
-        $this->modelNamespace = $modelNamespace;
-        $this->modelName = $modelName;
-        $this->modelBundle = $modelBundle;
         $this->container = $container;
 
         $this->build();
+
+        $this->connection = $connections->connectionName;
     }
 
     /**
@@ -65,27 +63,9 @@ abstract class AbstractDao {
      * Get model name
      * @return string
      */
-    public function getModelName()
+    public function getModelClass()
     {
-        return $this->modelName;
-    }
-
-    /**
-     * @return string
-     */
-    public function getBundle()
-    {
-        return $this->modelBundle;
-    }
-
-    /**
-     * @param $name
-     * @return $this
-     */
-    protected function setModelName($name) {
-        $this->modelName = $name;
-
-        return $this;
+        return $this->modelClass;
     }
 
     /**
@@ -175,8 +155,6 @@ abstract class AbstractDao {
      * @return \Sebk\SmallOrmCore\Dao\modelClass
      */
     public function newModel() {
-        $modelClass = $this->modelNamespace . "\\" . $this->modelName;
-
         $primaryKeys = array();
         foreach ($this->primaryKeys as $primaryKey) {
             $primaryKeys[] = lcfirst($primaryKey->getModelName());
@@ -199,7 +177,8 @@ abstract class AbstractDao {
             $toManys[] = lcFirst($toManyAlias);
         }
 
-        $model = new $modelClass($this->modelName, $this->modelBundle, $primaryKeys, $fields, $types, $toOnes, $toManys, $this->container);
+        $modelClass = $this->getModelClass();
+        $model = new $modelClass($primaryKeys, $fields, $types, $toOnes, $toManys, $this->container, $this);
 
         foreach ($this->defaultValues as $property => $defaultValue) {
             $method = "raw" . $property;
@@ -229,7 +208,7 @@ abstract class AbstractDao {
      * @return ModelCollection
      */
     public function newCollection($array = array()) {
-        $modelClass = $this->modelNamespace . "\\" . $this->modelName . "Collection";
+        $modelClass = $this->getModelClass();
         if (class_exists($modelClass)) {
             $collection = new $modelClass($array);
         } else {
@@ -315,7 +294,7 @@ abstract class AbstractDao {
             }
         }
 
-        throw new DaoException("Field '$fieldName' not found in model '" . $this->modelName . "'");
+        throw new DaoException("Field '$fieldName' not found in model (" . $this->modelClass . ")");
     }
 
     /**
@@ -624,26 +603,22 @@ abstract class AbstractDao {
 
     /**
      * Add to one relation
+     * @param string $alias
      * @param array $keys
      * @param string $toModel
-     * @param string $toBundle
-     * @return \Sebk\SmallOrmCore\Dao\AbstractDao
+     * @return $this
      * @throws DaoException
      */
-    public function addToOne($alias, $keys, $toModel, $toBundle = null) {
-        if ($toBundle === null) {
-            $toBundle = $this->modelBundle;
-        }
-
+    public function addToOne(string $alias, array $keys, string $toModel) {
         foreach ($keys as $thisKey => $otherKey) {
             try {
                 $this->getField($thisKey);
             } catch (DaoException $e) {
-                throw new DaoException("The field '$thisKey' of relation to '$toModel' of bundle '$toBundle' does not exists in '$this->modelName'");
+                throw new DaoException("The field '$thisKey' of relation to '$toModel' does not exists in ($this->modelClass'");
             }
         }
 
-        $this->toOne[$alias] = new ToOneRelation($toBundle, $toModel, $keys, $this->daoFactory, $alias);
+        $this->toOne[$alias] = new ToOneRelation($toModel, $keys, $this->daoFactory, $alias);
 
         return $this;
     }
@@ -659,26 +634,22 @@ abstract class AbstractDao {
 
     /**
      * Add a to many relation
+     * @param string $alias
      * @param array $keys
      * @param string $toModel
-     * @param string $toBundle
-     * @return \Sebk\SmallOrmCore\Dao\AbstractDao
+     * @return $this
      * @throws DaoException
      */
-    public function addToMany($alias, $keys, $toModel, $toBundle = null) {
-        if ($toBundle === null) {
-            $toBundle = $this->modelBundle;
-        }
-
+    public function addToMany(string $alias, array $keys, string $toModel) {
         foreach ($keys as $thisKey => $otherKey) {
             try {
                 $this->getField($thisKey);
             } catch (DaoException $e) {
-                throw new DaoException("The field '$thisKey' of relation to '$toModel' of bundle '$toBundle' does not exists in '$this->modelName'");
+                throw new DaoException("The field '$thisKey' of relation to '$toModel' does not exists in '$this->modelClass'");
             }
         }
 
-        $this->toMany[$alias] = new ToManyRelation($toBundle, $toModel, $keys, $this->daoFactory, $alias);
+        $this->toMany[$alias] = new ToManyRelation($toModel, $keys, $this->daoFactory, $alias);
 
         return $this;
     }
@@ -707,7 +678,7 @@ abstract class AbstractDao {
             return $this->toMany[$alias];
         }
 
-        throw new DaoException("Relation '$alias' does not exists in '$this->modelName' of bundle '$this->modelBundle'");
+        throw new DaoException("Relation '$alias' does not exists in '$this->modelClass'");
     }
 
     /**
@@ -787,7 +758,7 @@ abstract class AbstractDao {
             }
         }
 
-        throw new DaoException("Field '$modelName' does not exists in '$this->modelBundle' '$this->modelName' model");
+        throw new DaoException("Field '$modelName' does not exists in '$this->modelClass' model");
     }
 
     /**
@@ -800,7 +771,7 @@ abstract class AbstractDao {
      */
     protected function update(Model $model, $forceConnection = null) {
         if (!$model->fromDb) {
-            throw new DaoException("Try update a record not from db from '$this->modelBundle' '$this->modelName' model");
+            throw new DaoException("Try update a record not from db from '$this->modelClass' model");
         }
 
         list($sql, $parms) = $this->getUpdateSql($model);
@@ -860,7 +831,7 @@ abstract class AbstractDao {
      */
     public function delete(Model $model, $forceConnection = null) {
         if (!$model->fromDb) {
-            throw new DaoException("Try delete a record not from db from '$this->modelBundle' '$this->modelName' model");
+            throw new DaoException("Try delete a record not from db from '$this->modelClass' model");
         }
 
         list($sql, $parms) = $this->getDeleteSql($model);
@@ -991,7 +962,7 @@ abstract class AbstractDao {
      * @return array
      */
     public function findBy($conds, $dependenciesAliases = array()) {
-        $query = $this->createQueryBuilder(lcfirst($this->modelName));
+        $query = $this->createQueryBuilder(lcfirst($this->modelClass));
 
         foreach ($dependenciesAliases as $dependance) {
             foreach ($dependance as $aliasFrom => $aliasTo) {

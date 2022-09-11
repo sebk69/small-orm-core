@@ -8,6 +8,7 @@
 
 namespace Sebk\SmallOrmCore\Dao;
 
+use Psr\Container\ContainerInterface;
 use Sebk\SmallOrmCore\Validator\AbstractValidator;
 
 /**
@@ -19,9 +20,8 @@ class Model implements \JsonSerializable {
     const MYSQL_FORMAT_DATETIME = "Y-m-d H:i:s";
     const MYSQL_FORMAT_DATE = "Y-m-d";
 
-    private $modelName;
-    private $bundle;
     protected $container;
+    protected $dao;
     protected $validator;
     private $primaryKeys = array();
     private $originalPrimaryKeys = null;
@@ -36,15 +36,18 @@ class Model implements \JsonSerializable {
 
     /**
      * Construct model
-     * @param string $modelName
      * @param array $primaryKeys
      * @param array $fields
+     * @param array $types
+     * @param array $toOnes
+     * @param array $toManys
+     * @param ContainerInterface $container
+     * @param AbstractDao $dao
      */
-    public function __construct($modelName, $bundle, $primaryKeys, $fields, $types, $toOnes, $toManys, $container)
+    public function __construct(array $primaryKeys, array $fields, array $types, array $toOnes, array $toManys, ContainerInterface $container, AbstractDao $dao)
     {
-        $this->modelName = $modelName;
-        $this->bundle = $bundle;
         $this->container = $container;
+        $this->dao = $dao;
 
         foreach ($primaryKeys as $primaryKey) {
             $this->primaryKeys[$primaryKey] = null;
@@ -62,22 +65,6 @@ class Model implements \JsonSerializable {
         foreach ($toManys as $toMany) {
             $this->toManys[$toMany] = null;
         }
-    }
-
-    /**
-     * @return string
-     */
-    public function getModelName()
-    {
-        return $this->modelName;
-    }
-
-    /**
-     * @return string
-     */
-    public function getBundle()
-    {
-        return $this->bundle;
     }
 
     /**
@@ -163,7 +150,7 @@ class Model implements \JsonSerializable {
                                     $this->fields[$name] = $args[0];
                                 }
                             } else {
-                                throw new ModelException("Setter $method of model ($this->modelName) must be of type DateTime");
+                                throw new ModelException("Setter $method of model (" . static::class . ") must be of type DateTime");
                             }
                             break;
                         case Field::TYPE_DATE:
@@ -174,7 +161,7 @@ class Model implements \JsonSerializable {
                                     $this->fields[$name] = $args[0];
                                 }
                             } else {
-                                throw new ModelException("Setter $method of model ($this->modelName) must be of type DateTime");
+                                throw new ModelException("Setter $method of model (" . static::class . ") must be of type DateTime");
                             }
                             break;
                         case Field::TYPE_TIMESTAMP:
@@ -185,7 +172,7 @@ class Model implements \JsonSerializable {
                                     $this->fields[$name] = $args[0];
                                 }
                             } else {
-                                throw new ModelException("Setter on field timestamp of model ($this->modelName) must be of type DateTime");
+                                throw new ModelException("Setter on field timestamp of model (" . static::class . ") must be of type DateTime");
                             }
                             break;
                         case Field::TYPE_FLOAT:
@@ -243,7 +230,7 @@ class Model implements \JsonSerializable {
                 return $this;
                 break;
             default:
-                throw new ModelException("Method '$method' doesn't extist in model '$this->modelName' of bundle '$this->bundle'");
+                throw new ModelException("Method '$method' doesn't extist in model (" . static::class . ")");
         }
     }
 
@@ -565,10 +552,7 @@ class Model implements \JsonSerializable {
         }
 
         if ($this->toOnes[$alias] === null) {
-            $this->container
-                    ->get("sebk_small_orm_dao")
-                    ->get($this->bundle, $this->modelName)
-                    ->loadToOne($alias, $this, $dependenciesAliases);
+            $this->getDao()->loadToOne($alias, $this, $dependenciesAliases);
         }
 
         return $this->toOnes[$alias];
@@ -587,10 +571,7 @@ class Model implements \JsonSerializable {
             throw new DaoException("Field '$alias' does not exists (loading to many relation)");
         }
         if ($this->toManys[$alias] === null || count($this->toManys[$alias]) == 0) {
-            $this->container
-                    ->get("sebk_small_orm_dao")
-                    ->get($this->bundle, $this->modelName)
-                    ->loadToMany($alias, $this, $dependenciesAliases);
+            $this->dao->loadToMany($alias, $this, $dependenciesAliases);
         }
 
         return $this->toManys[$alias];
@@ -602,9 +583,7 @@ class Model implements \JsonSerializable {
      */
     public function getDao()
     {
-        return $this->container
-                    ->get("sebk_small_orm_dao")
-                    ->get($this->bundle, $this->modelName);
+        return $this->dao;
     }
 
     /**

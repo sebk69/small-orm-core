@@ -14,24 +14,21 @@ use Sebk\SmallOrmCore\Factory\Dao;
  */
 class Relation
 {
+    protected $daoClass;
     protected $keys;
-    protected $modelBundle;
-    protected $modelName;
     protected $daoFactory;
     protected $alias;
 
     /**
      * Contruct relation
-     * @param string $modelBundle
-     * @param string $modelName
-     * @param string $alias
+     * @param $dao
+     * @param $relationKeys
      * @param Dao $daoFactory
+     * @param $alias
      */
-    public function __construct($modelBundle, $modelName, $relationKeys,
-                                Dao $daoFactory, $alias)
+    public function __construct(string $daoClass, array $relationKeys,
+                                Dao $daoFactory, string $alias)
     {
-        $this->modelBundle = $modelBundle;
-        $this->modelName   = $modelName;
         $this->daoFactory  = $daoFactory;
         $this->keys        = $relationKeys;
         $this->alias       = $alias;
@@ -42,7 +39,7 @@ class Relation
      */
     public function getDao()
     {
-        return $this->daoFactory->get($this->modelBundle, $this->modelName);
+        return $this->daoFactory->get($this->daoClass);
     }
 
     /**

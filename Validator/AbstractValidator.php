@@ -86,8 +86,7 @@ abstract class AbstractValidator
      */
     public function testUnique($field)
     {
-        $dao      = $this->daoFactory->get($this->model->getBundle(),
-            $this->model->getModelName());
+        $dao      = $this->model->getDao();
         $creation = !$this->model->fromDb;
 
         $query  = $dao->createQueryBuilder("uniqueTable");
@@ -131,8 +130,7 @@ abstract class AbstractValidator
      */
     public function testUniqueWithDeterminant($determinantField, $determinantValue, $field)
     {
-        $dao      = $this->daoFactory->get($this->model->getBundle(),
-            $this->model->getModelName());
+        $dao      = $this->model->getDao();
         $creation = !$this->model->fromDb;
 
         $query  = $dao->createQueryBuilder("uniqueTable");
