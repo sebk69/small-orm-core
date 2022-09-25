@@ -614,8 +614,26 @@ class Model implements \JsonSerializable {
      */
     public function getValidator()
     {
+        // If not set only
         if($this->validator === null) {
-            $this->validator = $this->container->get("sebk_small_orm_validator")->get($this);
+            // Get class
+            $validatorClass = $this->getDao()->getValidator();
+            
+            // If null => nothing to validate
+            if ($validatorClass == null) {
+                return null;
+            }
+            
+            // Create object
+            $validator = new $validatorClass($this->getDao()->getDaoFactory(), $this);
+            
+            // Check validator instance of AbstractValidator
+            if (!$validator instanceof AbstractValidator) {
+                throw new DaoException("Class $validatorClass must extends " . AbstractValidator::class . " !");
+            }
+            
+            // Set validator on model
+            $this->validator = $validator;
         }
 
         return $this->validator;

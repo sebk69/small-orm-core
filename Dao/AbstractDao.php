@@ -21,9 +21,11 @@ use Sebk\SmallOrmCore\QueryBuilder\DeleteBuilder;
 abstract class AbstractDao {
 
     protected $connection;
-    protected $connectionName;
+    protected $connectionName = "default";
+
     protected $daoFactory;
     protected $container;
+    protected $validatorClass;
     private $modelClass;
     private $dbTableName;
     private $primaryKeys = array();
@@ -38,7 +40,7 @@ abstract class AbstractDao {
 
         $this->build();
 
-        $this->connection = $connections->connectionName;
+        $this->connection = $connections->get($this->connectionName);
     }
 
     /**
@@ -51,6 +53,25 @@ abstract class AbstractDao {
     }
 
     /**
+     * @return string
+     */
+    public function getConnectionName(): string
+    {
+        return $this->connectionName;
+    }
+
+    /**
+     * @param string $connectionName
+     * @return $this
+     */
+    public function setConnectionName(string $connectionName): AbstractDao
+    {
+        $this->connectionName = $connectionName;
+        
+        return $this;
+    }
+
+    /**
      * Get connection
      * @return AbstractConnection
      */
@@ -60,12 +81,34 @@ abstract class AbstractDao {
     }
 
     /**
+     * @param $connection
+     * @return $this
+     */
+    public function setConnection($connection): AbstractDao
+    {
+        $this->connection = $connection;
+
+        return $this;
+    }
+
+    /**
      * Get model name
      * @return string
      */
     public function getModelClass()
     {
         return $this->modelClass;
+    }
+
+    /**
+     * @param $modelClass
+     * @return $this
+     */
+    public function setModelClass($modelClass): AbstractDao
+    {
+        $this->modelClass = $modelClass;
+
+        return $this;
     }
 
     /**
@@ -1015,6 +1058,27 @@ abstract class AbstractDao {
         }
 
         return $results[0];
+    }
+
+    /**
+     * Get validator class
+     * @return mixed
+     */
+    public function getValidatorClass()
+    {
+        return $this->validatorClass;
+    }
+    
+    /**
+     * Set validator class
+     * @param $className
+     * @return $this
+     */
+    public function setValidatorClass($className)
+    {
+        $this->validatorClass = $className;
+        
+        return $this;
     }
 
 }

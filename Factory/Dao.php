@@ -7,6 +7,7 @@
 
 namespace Sebk\SmallOrmCore\Factory;
 
+use Psr\Container\ContainerInterface;
 use Sebk\SmallOrmCore\Dao\AbstractDao;
 
 /**
@@ -15,20 +16,18 @@ use Sebk\SmallOrmCore\Dao\AbstractDao;
 class Dao
 {
     protected $connectionFactory;
-    protected $config;
     protected $container;
     protected static $loadedDao = array();
     protected $mocked = [];
 
     /**
      * Construct dao factory
-     * @param \Sebk\SmallOrmCore\Factory\Connections $connectionFactory
-     * @param type $config
+     * @param Connections $connectionFactory
+     * @param $container
      */
-    public function __construct(Connections $connectionFactory, $config, $container)
+    public function __construct(Connections $connectionFactory, ContainerInterface $container)
     {
         $this->connectionFactory = $connectionFactory;
-        $this->config            = $config;
         $this->container         = $container;
     }
 

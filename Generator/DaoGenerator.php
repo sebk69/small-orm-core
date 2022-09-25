@@ -8,6 +8,7 @@
 namespace Sebk\SmallOrmCore\Generator;
 
 
+use Psr\Container\ContainerInterface;
 use Sebk\SmallOrmCore\Dao\AbstractDao;
 use Sebk\SmallOrmCore\Dao\DaoException;
 use Sebk\SmallOrmCore\Dao\Field;
@@ -16,7 +17,6 @@ use Sebk\SmallOrmCore\Database\AbstractConnection;
 use Sebk\SmallOrmCore\Factory\Connections;
 use Sebk\SmallOrmCore\Factory\Dao;
 use Sebk\SmallOrmCore\Factory\DaoNotFoundException;
-use function Webmozart\Assert\Tests\StaticAnalysis\boolean;
 
 /**
  * Class DaoGenerator
@@ -24,13 +24,13 @@ use function Webmozart\Assert\Tests\StaticAnalysis\boolean;
  */
 class DaoGenerator
 {
-    protected $connectionName;
-    protected $bundle;
-    protected $config;
-    protected $daoFactory;
-    protected $connections;
-    protected $dbGateway;
-    protected $container;
+    protected string $connectionName;
+    protected string $daoNameSpace;
+    protected string $modelNamespace;
+    protected DbGateway $dbGateway;
+    protected Selector $selector;
+    /** @var Selector[] */
+    protected array $selectors;
 
     protected static $daoTemplate = "<?php
 namespace [nameSpace];
@@ -52,33 +52,49 @@ use Sebk\SmallOrmCore\Dao\Model;
 
 class [modelName] extends Model
 {
+    
+    public function onLoad() {}
+    
+    public function beforeSave {}
+    
+    public function afterSave {}
+    
+    public function beforeDelete() {}
+    
+    public function afterDelete() {}
+    
+    [getters]
+    
+    [setters]
+    
+    [toOne]
+    
+    [toMany]
 }";
 
     /**
      * DaoGenerator constructor.
-     * @param Dao $daoFactory
-     * @param Connections $connections
      */
-    public function __construct(Dao $daoFactory, Connections $connections, $container, $config)
-    {
-        $this->daoFactory = $daoFactory;
-        $this->connections = $connections;
-        $this->container = $container;
-        $this->config = $config;
+    public function __construct(protected Connections $connections, protected ContainerInterface $container, protected array $config) {
+        foreach ($this->config['selectors'] as $selectorArray) {
+            $this->selectors[] = new Selector($this->config['folders'], $selectorArray);
+        }
     }
 
     /**
      * Set class parameters
-     * @param $connectionName
-     * @param $bundle
+     * @param string $connectionName
+     * @param Selector $selector
      * @return $this
      * @throws \Sebk\SmallOrmCore\Factory\ConfigurationException
      */
-    public function setParameters($connectionName, $bundle)
+    public function setParameters(string $connectionName, Selector $selector): DaoGenerator
     {
         $this->connectionName = $connectionName;
         $this->dbGateway = new DbGateway($this->connections->get($connectionName));
-        $this->bundle = $bundle;
+        $this->selector = $selector;
+        mkdir($selector->getDaoFolder(), 0777, true);
+        mkdir($selector->getModelFolder(), 0777, true);
 
         return $this;
     }
@@ -88,8 +104,8 @@ class [modelName] extends Model
      * @return string
      */
     public function getDaoClassName($table) {
-        if (isset($this->config[$this->bundle]["connections"][$this->connectionName]["remove_tables_namespaces"])) {
-            foreach ($this->config[$this->bundle]["connections"][$this->connectionName]["remove_tables_namespaces"] as $namespace) {
+        if (isset($this->config["remove_tables_namespaces"])) {
+            foreach ($this->config["remove_tables_namespaces"] as $namespace) {
                 if(substr($table, 0, strlen($namespace)) == $namespace) {
                     $table = substr($table, strlen($namespace));
                 }
@@ -100,25 +116,16 @@ class [modelName] extends Model
     }
 
     /**
-     * Get filepath to DAO
-     * @return string
-     */
-    private function getDaoFilePath($dbTableName)
-    {
-        return $this->daoFactory->getFile($this->connectionName, $this->bundle, $this->getDaoClassName($dbTableName), true);
-    }
-
-    /**
      * Get content of dao file
      * @return string
      */
     public function getDaoFileContent($dbTableName)
     {
-        $filePath = $this->getDaoFilePath($dbTableName);
+        $filePath = $this->selector->getDaoFolder() . '/' . $this->getDaoClassName($dbTableName) . '.php';
         if(file_exists($filePath)) {
             return file_get_contents($filePath);
         } else {
-            $template = str_replace("[nameSpace]", $this->daoFactory->getDaoNamespace($this->connectionName, $this->bundle), static::$daoTemplate);
+            $template = str_replace("[nameSpace]", $this->selector->getDaoNamespace(), static::$daoTemplate);
             $template = str_replace("[daoName]", $this->getDaoClassName($dbTableName), $template);
 
             return $template;
@@ -132,7 +139,7 @@ class [modelName] extends Model
      */
     public function putDaoFileContent($dbTableName, $content)
     {
-        $filePath = $this->getDaoFilePath($dbTableName);
+        $filePath = $this->selector->getDaoFolder() . '/' . $this->getDaoClassName($dbTableName) . '.php';
         file_put_contents($filePath, $content);
 
         return $this;
@@ -181,6 +188,23 @@ class [modelName] extends Model
         }
     }
 
+    private function getSelectorForTable(string $table)
+    {
+        // Is current selector has table ?
+        if (file_exists($this->selector->getDaoFolder() . '/' . $this->getDaoClassName($table))) {
+            return $this->selector;
+        }
+
+        // Else get first selector which have table
+        foreach ($this->selectors as $selector) {
+            if (file_exists($selector->getDaoFolder() . '/' . $this->getDaoClassName($table))) {
+                return $selector;
+            }
+        }
+
+        throw new TableNotFoundException('Table ' . $table . ' can\'t be found in any selector namespace');
+    }
+
     /**
      * Generate build function
      * @return string
@@ -190,10 +214,6 @@ class [modelName] extends Model
         // retreive database description
         $connection = $this->connections->get($this->connectionName);
         $description = $this->dbGateway->getDescription($dbTableName);
-
-        // get generator configs
-        $configCollection = new ConfigCollection($this->connectionName, $this->container);
-        $configCollection->loadConfigs();
 
         // build function
         $output = 'protected function build()
@@ -237,16 +257,10 @@ class [modelName] extends Model
         // To one relations
         foreach ($this->dbGateway->getToOnes($dbTableName) as $toOne) {
             try {
-                $toBundle = $configCollection->getTableBundle($toOne["toTable"]);
-                $output .= '            ->addToOne("' . static::camelize($toOne["relation"], true) .
-                    '", ["' . static::camelize($toOne["toField"], true) . '" => "' . static::camelize($toOne["fromField"], true) . '"], "' . $this->getDaoClassName($toOne["toTable"]) . '"';
-                if ($toBundle == $this->bundle) {
-                    $output .= ')
-';
-                } else {
-                    $output .= ', "' . $toBundle . '")
-';
-                }
+                $toSelector = $this->getSelectorForTable($toOne["toTable"]);
+                $output .= '            ->addToOne("' . static::camelize($toOne["toTable"], true) .
+                    '", ["' . static::camelize($toOne["toField"], true) . '" => "' . static::camelize($toOne["fromField"], true) . '"], ' .
+                    $toSelector->getDaoNamespace() . '\\' . $this->getDaoClassName($toOne["toTable"]) . '::class)';
             } catch(TableNotFoundException $e) {
 
             }
@@ -255,19 +269,11 @@ class [modelName] extends Model
         // To many relations
         foreach ($this->dbGateway->getToManys($dbTableName) as $toMany) {
             try {
-                $toBundle = $configCollection->getTableBundle($toMany["toTable"]);
+                $toSelector = $this->getSelectorForTable($toMany["toTable"]);
                 $output .= '            ->addToMany("'.static::camelize($toMany["toTable"], true, true).
-                    '", ["'.static::camelize($toMany["toField"], true).'" => "'.static::camelize($toMany["fromField"], true).'"], "'.$this->getDaoClassName($toMany["toTable"]).'"';
-                if($toBundle == $this->bundle) {
-                    $output .= ')
-';
-                } else {
-                    $output .= ', "'.$toBundle.'");
-';
-                }
-            } catch(TableNotFoundException $e) {
-
-            }
+                    '", ["'.static::camelize($toMany["toField"], true).'" => "'.static::camelize($toMany["fromField"], true).'"], ' .
+                    $toSelector->getDaoNamespace() . '\\' . $this->getDaoClassName($toOne["toTable"]) . '::class)';
+            } catch(TableNotFoundException $e) {}
         }
 
         $output .= '        ;
@@ -333,18 +339,6 @@ class [modelName] extends Model
      */
     public function recomputeFilesForTable($dbTableName)
     {
-        // check if table is configured in other bundle
-        $configCollection = new ConfigCollection($this->connectionName, $this->container);
-        $configCollection->loadConfigs();
-        try {
-            $tableBundle = $configCollection->getTableBundle($dbTableName);
-            if($tableBundle != $this->bundle) {
-                throw new \Exception("The table ".$dbTableName." already configured for bundle ".$tableBundle);
-            }
-        } catch (TableNotFoundException $e) {
-
-        }
-
         // Build function for the DAO
         $content = $this->getDaoFileContent($dbTableName);
         $parser = new FileParser($content);
@@ -353,11 +347,11 @@ class [modelName] extends Model
         $this->putDaoFileContent($dbTableName, $content);
 
         // Create model class if not exists
-        $modelFile = $this->daoFactory->getModelFile($this->connectionName, $this->bundle, $this->getDaoClassName($dbTableName), true);
+        $modelFile = $this->selector->getModelFolder() . '/' . $this->getDaoClassName($dbTableName);
         if(!file_exists($modelFile)) {
             $content = str_replace(
                 "[namespace]",
-                $this->daoFactory->getModelNamespace($this->connectionName, $this->bundle),
+                $this->selector->getModelNamespace(),
                 str_replace("[modelName]",
                     $this->getDaoClassName($dbTableName),
                     static::$modelTemplate
@@ -369,78 +363,40 @@ class [modelName] extends Model
         return $this;
     }
 
-    /**
-     * Create @method bloc comment for model
-     * @param $daoName
-     * @return string
-     * @throws DaoNotFoundException
-     * @throws \Sebk\SmallOrmCore\Factory\ConfigurationException
-     */
-    public function createAtModelMethods($daoName)
+    public function fieldGetter(string $fieldName): string
     {
-        // Init methods
-        /** @var string[] $methods */
-        $methods = [];
-
-        // Get dao
-        try {
-            /** @var AbstractDao $dao */
-            $dao = $this->daoFactory->get($this->bundle, $daoName);
-        } catch(DaoNotFoundException $e) {
-            return;
-        }
-
-        // Create @methods for fields
-        /** @var Field $field */
-        foreach ($dao->getFields() as $field) {
-            $methods[] = " * @method get" . ucfirst($field->getModelName() . "()");
-            $methods[] = " * @method set" . ucfirst($field->getModelName() . "(\$value)");
-        }
-
-        // TODO multi connection relations
-        // Create @methods for to one relations
-        foreach ($dao->getToOneRelations() as $toOneRelation) {
-            $methods[] = " * @method \\".$this->daoFactory->getModelNamespace($this->connectionName, $toOneRelation->getDao()->getBundle()).
-                "\\".$toOneRelation->getDao()->getModelName().
-                " get" . ucfirst($toOneRelation->getAlias() . "()");
-        }
-
-        // Create @methods for to many relations
-        foreach ($dao->getToManyRelations() as $toManyRelation) {
-            $methods[] = " * @method \\".$this->daoFactory->getModelNamespace($this->connectionName, $toManyRelation->getDao()->getBundle()).
-                "\\".$toManyRelation->getDao()->getModelName().
-                "[] get" . ucfirst($toManyRelation->getAlias() . "()");
-        }
-
-        // Finalise block comment
-        $blocComment = "/**\n";
-        foreach ($methods as $method) {
-            $blocComment .= $method."\n";
-        }
-        $blocComment .= " */\n";
-
-        // Read model file
-        $finalFile = "";
-        $commentInsered = false;
-        $modelFile = $this->daoFactory->getModelFile($this->connectionName, $this->bundle, $daoName, true);
-        if(file_exists($modelFile)) {
-            $f = fopen($modelFile, "r");
-            while ($line = fgets($f)) {
-                if (!$commentInsered) {
-                    if (strstr($line, "class")) {
-                        $finalFile .= $blocComment;
-                        $finalFile .= $line;
-                        $commentInsered = true;
-                    } elseif (!strstr($line, "*")) {
-                        $finalFile .= $line;
-                    }
-                } else {
-                    $finalFile .= $line;
-                }
-            }
-            fclose($f);
-
-            file_put_contents($modelFile, $finalFile);
-        }
+        return "
+    public function get" . ucfirst($fieldName) . "()
+    {
+        return parent::get" . ucfirst($fieldName) . "();
     }
+    ";
+    }
+
+    public function fieldSetter(string $fieldName): string
+    {
+        return '
+    public function set' . ucfirst($fieldName) . '($value)
+    {
+        parent::set' . ucfirst($fieldName) . '($value);
+        
+        return $this;
+    }
+    ';
+    }
+
+    public function addToCollection(string $toManyDaoClassName, string $toManyName, string $fromIdField, string $toIdField): string
+    {
+        return "
+    public function addTo" . ucfirst($fieldName) . "($toManyDaoClassName \$$toManyDaoClassName)
+    {
+        \$$toManyDaoClassName\->set" . ucfirst($toIdField) . "(parent::get$fromIdField());
+        \$collection = parent::get" . ucfirst($toManyName) . "();
+        \$collection[] = \$$toManyDaoClassName;
+        parent::set" . ucfirst($toManyName) . "(\$collection);
+        
+        return $this;
+    }";
+    }
+
 }
