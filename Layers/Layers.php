@@ -30,33 +30,35 @@ class Layers
     }
 
     /**
-     * List configured bundles
+     * List configured folders
      * @return array
      */
-    public function listBundles()
+    public function listFolders()
     {
         $result = [];
-        foreach($this->config as $bundle => $bundleConfig) {
-            $result[] = $bundle;
+        foreach($this->config['selectors'] as $selector => $selectorConfig) {
+            if (array_key_exists('layers_path', $selectorConfig)) {
+                $result[$selector] = $selectorConfig['layers_path'];
+            }
         }
 
         return $result;
     }
 
     /**
-     * Load layers for a bundle
-     * @param $bundle
+     * Load layers for a selector
+     * @param $selector
+     * @param $folder
      */
-    protected function loadBundleLayers($bundle)
+    protected function loadSelectorLayers($selector, $folder)
     {
-        $bundlePath = $this->container->get('kernel')->locateResource("@".$bundle);
-        $layersRootPath = $bundlePath."Resources/databaseLayers";
-        if(is_dir($layersRootPath)) {
+        $layersRootPath = $folder;
+        if (is_dir($layersRootPath)) {
             $layersNames = scandir($layersRootPath);
-            $this->layers[$bundle] = [];
-            foreach($layersNames as $layerName) {
-                if(substr($layerName, 0, 1) != ".") {
-                    $this->layers[$bundle][] = new Layer($layersRootPath, $layerName, $this->container->get("sebk_small_orm_connections"), $this->container);
+            $this->layers[$selector] = [];
+            foreach ($layersNames as $layerName) {
+                if (substr($layerName, 0, 1) != ".") {
+                    $this->layers[$selector][] = new Layer($layersRootPath, $layerName, $this->container->get("sebk_small_orm_connections"), $this->container);
                 }
             }
         }
@@ -68,38 +70,36 @@ class Layers
         $executed = $this->initializeExecutedLayers();
 
         // Load layers
-        $bundles = $this->listBundles();
-        foreach ($bundles as $bundle) {
+        $selectors = $this->listFolders();
+        foreach ($selectors as $selector => $folder) {
             // load all layers
-            $this->loadBundleLayers($bundle);
+            $this->loadSelectorLayers($selector, $folder);
 
             // Unset already executed layers
-            if(isset($this->layers[$bundle]) && is_array($this->layers[$bundle])) {
-                foreach ($this->layers[$bundle] as $key => $layer) {
-                    if (isset($executed[$bundle][$layer->getName()])) {
-                        unset($this->layers[$bundle][$key]);
+            if(isset($this->layers[$selector]) && is_array($this->layers[$selector])) {
+                foreach ($this->layers[$selector] as $key => $layer) {
+                    if (array_key_exists($selector, $executed)) {
+                        unset($this->layers[$selector][$key]);
                     }
                 }
             }
         }
 
-
-
         // execute layers
         do {
             $i = 0;
-            foreach ($this->layers as $bundle => $bundleLayers) {
-                foreach ($bundleLayers as $layerKey => $layer) {
+            foreach ($this->layers as $selector => $selectorLayers) {
+                foreach ($selectorLayers as $layerKey => $layer) {
                     // Check dependencies ar satisfied
                     $depSatisfied = true;
                     foreach ($layer->getDependencies() as $dependency) {
-                        if (!isset($dependency["bundle"])) {
-                            if (!isset($executed[$bundle][$dependency["layer"]])) {
+                        if (!isset($dependency["selector"])) {
+                            if (!isset($executed[$selector][$dependency["layer"]])) {
                                 $depSatisfied = false;
                                 break;
                             }
                         } else {
-                            if (!isset($executed[$dependency["bundle"]][$dependency["layer"]])) {
+                            if (!isset($executed[$dependency["selector"]][$dependency["layer"]])) {
                                 $depSatisfied = false;
                                 break;
                             }
@@ -110,10 +110,10 @@ class Layers
                     if ($depSatisfied && $layer->getRequiredParametersSatisfied()) {
                         echo "Execute layer ".$layer->getName()."...\n";
                         if ($layer->executeScripts()) {
-                            $layer->getConnection()->execute("INSERT INTO `_small_orm_layers` (`bundle`, `layer`) VALUES(:bundle, :layer);",
-                                ["bundle" => $bundle, "layer" => $layer->getName()]);
-                            $executed[$bundle][$layer->getName()] = true;
-                            unset($this->layers[$bundle][$layerKey]);
+                            $layer->getConnection()->execute("INSERT INTO `_small_orm_layers` (`selector`, `layer`) VALUES(:selector, :layer);",
+                                ["selector" => $selector, "layer" => $layer->getName()]);
+                            $executed[$selector][$layer->getName()] = true;
+                            unset($this->layers[$selector][$layerKey]);
                             $i++;
                             echo " done\n";
                         } else {
@@ -126,8 +126,8 @@ class Layers
 
         // report non executed layers
         $report = false;
-        foreach ($this->layers as $bundle => $bundleLayers) {
-            foreach ($bundleLayers as $layer) {
+        foreach ($this->layers as $selector => $selectorLayers) {
+            foreach ($selectorLayers as $layer) {
                 if($layer->getRequiredParametersSatisfied()) {
                     if (!$report) {
                         $report = true;
@@ -136,7 +136,7 @@ class Layers
                         echo "Some layers have not be executed because unresolved dependencies :\n\n";
                     }
 
-                    echo "-> Layer '" . $layer->getName() . "' of bundle '" . $bundle . "'\n";
+                    echo "-> Layer '" . $layer->getName() . "' of selector '" . $selector . "'\n";
                 }
             }
         }
@@ -159,16 +159,16 @@ class Layers
             try {
                 // Create database and layers tables if not exists
                 $connection = $connectionsFactory->get($connectionName);
-                $connection->execute("CREATE TABLE IF NOT EXISTS `_small_orm_layers` ( `id` INT NOT NULL AUTO_INCREMENT , `bundle` VARCHAR(255) NOT NULL , `layer` VARCHAR(255) NOT NULL , PRIMARY KEY (`id`)) ENGINE = InnoDB;");
+                $connection->execute("CREATE TABLE IF NOT EXISTS `_small_orm_layers` ( `id` INT NOT NULL AUTO_INCREMENT , `selector` VARCHAR(255) NOT NULL , `layer` VARCHAR(255) NOT NULL , PRIMARY KEY (`id`)) ENGINE = InnoDB;");
 
                 // List already executed layers
-                $result = $connection->execute("SELECT `bundle`, `layer` from `_small_orm_layers`");
+                $result = $connection->execute("SELECT `selector`, `layer` from `_small_orm_layers`");
                 foreach ($result as $record) {
                     // And store them
-                    if (!isset($executedLayers[$record["bundle"]])) {
-                        $executedLayers[$record["bundle"]] = [];
+                    if (!isset($executedLayers[$record["selector"]])) {
+                        $executedLayers[$record["selector"]] = [];
                     }
-                    $executedLayers[$record["bundle"]][$record["layer"]] = true;
+                    $executedLayers[$record["selector"]][$record["layer"]] = true;
                 }
             } catch (\Exception $e) {}
         }
