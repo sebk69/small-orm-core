@@ -12,35 +12,13 @@ class PersistThread
     const COMMIT_TYPE = "COMMIT_TYPE";
     const ROLLBACK_TYPE = "ROLLBACK_TYPE";
 
-    /**
-     * @var bool
-     */
-    protected $transactionStarted = false;
-
-    /**
-     * @var Model[]
-     */
-    protected $bag = [];
-
-    /**
-     * @var AbstractConnection
-     */
-    protected $connection;
-
-    /**
-     * @var \PDO
-     */
-    protected $pdo;
-
-    /**
-     * @var bool
-     */
-    protected $flushOnInsert = true;
-
-    /**
-     * @var Model
-     */
-    protected $lastInsertedModel = null;
+    protected bool $transactionStarted = false;
+    /** @var Model[] */
+    protected array $bag = [];
+    protected AbstractConnection $connection;
+    protected \PDO $pdo;
+    protected bool $flushOnInsert = true;
+    protected Model|null $lastInsertedModel = null;
     
     /**
      * @param AbstractConnection $connection
@@ -53,10 +31,10 @@ class PersistThread
 
     /**
      * Set flush on insert
-     * @param $value
+     * @param bool $value
      * @return $this
      */
-    public function setFlushOnInsert($value = true)
+    public function setFlushOnInsert(bool $value = true)
     {
         $this->flushOnInsert = $value;
         
@@ -68,7 +46,7 @@ class PersistThread
      * @param Model $model
      * @return $this
      */
-    public function pushPersist(Model $model)
+    public function pushPersist(Model $model): PersistThread
     {
         if ($this->flushOnInsert && $model->fromDb == false) {
             $this->flush();
@@ -91,7 +69,7 @@ class PersistThread
      * @param Model $model
      * @return $this
      */
-    public function pushDelete(Model $model)
+    public function pushDelete(Model $model): PersistThread
     {
         $this->bag[] = [
             "model" => $model,
@@ -105,7 +83,7 @@ class PersistThread
      * Start transaction in the thread
      * @return $this
      */
-    public function startTransaction()
+    public function startTransaction(): PersistThread
     {
         $this->bag[] = [
             "model" => null,
@@ -119,7 +97,7 @@ class PersistThread
      * Commit thread
      * @return $this
      */
-    public function commit()
+    public function commit(): PersistThread
     {
         $this->bag[] = [
             "model" => null,
@@ -134,7 +112,7 @@ class PersistThread
      * Roolback thread
      * @return $this
      */
-    public function rollback()
+    public function rollback(): PersistThread
     {
         $this->bag = [];
         if ($this->transactionStarted) {
@@ -150,13 +128,15 @@ class PersistThread
 
     /**
      * Get sql
+     * Offset 0 is the sql statement
+     * Offset 1 is parameters
      * @param Model|null $model
      * @param $type
      * @param $key
      * @return array
      * @throws DaoException
      */
-    protected function getSqlForModel(?Model $model, $type, $key)
+    protected function getSqlForModel(?Model $model, $type, $key): array
     {
         $params = [];
 
@@ -215,7 +195,7 @@ class PersistThread
      * @return $this
      * @throws DaoException
      */
-    public function flush()
+    public function flush(): PersistThread
     {
         $sql = "";
         $params = [];
@@ -269,7 +249,7 @@ class PersistThread
      * Close thread
      * @return $this
      */
-    public function close()
+    public function close(): PersistThread
     {
         if (method_exists($this->connection, "getPdo") && $this->pdo != null) {
             $this->connection->pool->put($this->pdo);

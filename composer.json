@@ -10,5 +10,8 @@
       "name": "Sébastien Kus",
       "email": "seb@small-iceberg.dev"
     }
-  ]
+  ],
+  "require": {
+    "php": "8.1"
+  }
 }

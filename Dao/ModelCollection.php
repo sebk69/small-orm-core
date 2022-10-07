@@ -10,15 +10,17 @@ namespace Sebk\SmallOrmCore\Dao;
 /**
  * Model base collection
  */
-class ModelCollection implements \IteratorAggregate, \ArrayAccess, \JsonSerializable
+class ModelCollection implements \IteratorAggregate, \ArrayAccess, \JsonSerializable, \Countable
 {
-    protected $objects = array();
+
+    /** @var Model[] */
+    protected array $objects = [];
 
     /**
-     * @param \Sebk\SmallOrmCore\Dao\ModelCollection || array $array
+     * @param array $array
      * @throws DaoException
      */
-    public function __construct($array = array())
+    public function __construct(array $array = [])
     {
         if ($array instanceof ModelCollection) {
             $this->objects = $array->objects;
@@ -36,8 +38,9 @@ class ModelCollection implements \IteratorAggregate, \ArrayAccess, \JsonSerializ
     }
 
     /**
-     * @param string $key
-     * @return boolean
+     * Check if offset exists
+     * @param mixed $key
+     * @return bool
      */
     public function offsetExists(mixed $key): bool
     {
@@ -49,7 +52,7 @@ class ModelCollection implements \IteratorAggregate, \ArrayAccess, \JsonSerializ
     }
 
     /**
-     *
+     * Get object at offset $key
      * @param string $key
      * @return Model
      * @throws DaoException
@@ -64,9 +67,9 @@ class ModelCollection implements \IteratorAggregate, \ArrayAccess, \JsonSerializ
     }
 
     /**
-     *
+     * Set object at offset $key
      * @param string $key
-     * @param \Sebk\SmallOrmCore\Dao\Model $value
+     * @param Model $value
      * @throws DaoException
      */
     public function offsetSet(mixed $key, mixed $value): void
@@ -85,6 +88,7 @@ class ModelCollection implements \IteratorAggregate, \ArrayAccess, \JsonSerializ
     }
 
     /**
+     * Unset object at offset $offset
      * @param string $key
      * @throws DaoException
      */
@@ -97,6 +101,10 @@ class ModelCollection implements \IteratorAggregate, \ArrayAccess, \JsonSerializ
         throw new DaoException("Offset '$offset' doesn't exists");
     }
 
+    /**
+     * Serialize the collection
+     * @return mixed
+     */
     public function jsonSerialize(): mixed {
         $result = array();
 
@@ -107,7 +115,11 @@ class ModelCollection implements \IteratorAggregate, \ArrayAccess, \JsonSerializ
         return $result;
     }
 
-    public function toArray() {
+    /**
+     * Convert collection to array
+     * @return array
+     */
+    public function toArray(): array {
         $result = array();
 
         foreach($this->objects as $key => $value) {
@@ -117,12 +129,20 @@ class ModelCollection implements \IteratorAggregate, \ArrayAccess, \JsonSerializ
         return $result;
     }
 
+    /**
+     * Get iterator
+     * @return \Traversable
+     */
     function getIterator(): \Traversable
     {
         return new \ArrayIterator($this->objects);
     }
 
-    function count()
+    /**
+     * Count number of objects in collection
+     * @return int
+     */
+    function count(): int
     {
         return count($this->objects);
     }

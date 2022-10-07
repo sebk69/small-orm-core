@@ -20,19 +20,23 @@ class Model implements \JsonSerializable {
     const MYSQL_FORMAT_DATETIME = "Y-m-d H:i:s";
     const MYSQL_FORMAT_DATE = "Y-m-d";
 
-    protected $container;
-    protected $dao;
-    protected $validator;
-    private $primaryKeys = array();
-    private $originalPrimaryKeys = null;
-    private $fields = array();
-    private $types = array();
-    private $toOnes = array();
-    private $toManys = array();
-    private $metadata = array();
-    public $fromDb = false;
-    public $altered = false;
-    private $backup = null;
+    protected ContainerInterface $container;
+    protected AbstractDao $dao;
+    protected AbstractValidator $validator;
+    /** @var Field[] */
+    private array $primaryKeys = [];
+    /** @var Field[] */
+    private array|null $originalPrimaryKeys = null;
+    /** @var Field[] */
+    private array $fields = [];
+    /** @var string[] */
+    private array $types = [];
+    private array $toOnes = [];
+    private array $toManys = [];
+    private array $metadata = [];
+    public bool $fromDb = false;
+    public bool $altered = false;
+    private array | null $backup = null;
 
     /**
      * Construct model
@@ -209,8 +213,20 @@ class Model implements \JsonSerializable {
 
                 } elseif ($typeField == "toOne") {
                     $this->toOnes[$name] = $args[0];
+                    foreach ($this->getDao()->getToOneRelations()[$name]->getKeys() as $from => $to) {
+                        $setter = "set" . $from;
+                        $getter = "get" . $to;
+                        $this->$setter($args[0]->$getter());
+                    }
                 } elseif ($typeField == "toMany") {
                     $this->toManys[$name] = $args[0];
+                    foreach ($this->toManys[$name] as $toMany) {
+                        foreach ($this->getDao()->getToManyRelations()[$name]->getKeys() as $from => $to) {
+                            $setter = "set" . $to;
+                            $getter = "get" . $from;
+                            $toMany->$setter($this->$getter());
+                        }
+                    }
                 } elseif ($typeField == "metadata") {
                     $this->metadata[$name] = $args[0];
                 }
@@ -283,17 +299,20 @@ class Model implements \JsonSerializable {
 
     /**
      * Set original primary key
+     * @return $this
      */
-    public function setOriginalPrimaryKeys()
+    public function setOriginalPrimaryKeys(): Model
     {
         $this->originalPrimaryKeys = $this->primaryKeys;
+
+        return $this;
     }
 
     /**
      * Get original primary key
      * @return string
      */
-    public function getOriginalPrimaryKeys()
+    public function getOriginalPrimaryKeys(): string
     {
         return $this->originalPrimaryKeys;
     }
@@ -304,7 +323,7 @@ class Model implements \JsonSerializable {
      * @return string
      * @throws \ModelException
      */
-    public function getFieldType($field)
+    public function getFieldType($field): string
     {
         if (array_key_exists($field, $this->primaryKeys)) {
             return "primaryKeys";
@@ -329,7 +348,7 @@ class Model implements \JsonSerializable {
      * Get list of primary keys
      * @return array
      */
-    public function getPrimaryKeys()
+    public function getPrimaryKeys(): array
     {
         return $this->primaryKeys;
     }
@@ -339,7 +358,7 @@ class Model implements \JsonSerializable {
      * @param boolean $dependecies
      * @return array
      */
-    public function toArray($dependecies = true, $onlyFields = false, $fromJsonSeriaze = false)
+    public function toArray($dependecies = true, $onlyFields = false, $fromJsonSeriaze = false): array
     {
         $result = array();
 
@@ -507,7 +526,7 @@ class Model implements \JsonSerializable {
      * @param array $array
      * @return array
      */
-    protected function toUtf8Array($array)
+    protected function toUtf8Array($array): array
     {
         foreach ($array as $key => $cell) {
             if (is_array($cell)) {
@@ -529,7 +548,7 @@ class Model implements \JsonSerializable {
      * @param string $str
      * @return string
      */
-    protected function toUtf8String($str)
+    protected function toUtf8String($str): string | null
     {
         if (mb_detect_encoding($str, 'UTF-8', true) === false) {
             return utf8_encode($str);
@@ -545,7 +564,7 @@ class Model implements \JsonSerializable {
      * @return Model
      * @throws DaoException
      */
-    public function loadToOne($alias, $dependenciesAliases = array())
+    public function loadToOne($alias, $dependenciesAliases = array()): Model
     {
         if (!array_key_exists($alias, $this->toOnes)) {
             throw new DaoException("Field '$alias' does not exists (loading to one relation");
@@ -565,7 +584,7 @@ class Model implements \JsonSerializable {
      * @return Array
      * @throws DaoException
      */
-    public function loadToMany($alias, $dependenciesAliases = array())
+    public function loadToMany($alias, $dependenciesAliases = array()): array
     {
         if (!array_key_exists($alias, $this->toManys)) {
             throw new DaoException("Field '$alias' does not exists (loading to many relation)");
@@ -581,7 +600,7 @@ class Model implements \JsonSerializable {
      * Get the DAO of model
      * @return AbstractDao
      */
-    public function getDao()
+    public function getDao(): AbstractDao
     {
         return $this->dao;
     }
@@ -590,9 +609,21 @@ class Model implements \JsonSerializable {
      * Persist this model
      * @return $this
      */
-    public function persist($forceConnection = null)
+    public function persist($forceConnection = null): Model
     {
         $this->getDao()->persist($this, $forceConnection);
+
+        return $this;
+    }
+
+    /**
+     * Persist model in thread
+     * @param PersistThread $persistThread
+     * @return $this
+     */
+    public function persistInThread(PersistThread $persistThread): Model
+    {
+        $persistThread->pushPersist($this);
 
         return $this;
     }
@@ -601,9 +632,21 @@ class Model implements \JsonSerializable {
      * Delete this model
      * @return $this
      */
-    public function delete($forceConnection = null)
+    public function delete($forceConnection = null): Model
     {
         $this->getDao()->delete($this, $forceConnection);
+
+        return $this;
+    }
+
+    /**
+     * Delete model in thread
+     * @param PersistThread $persistThread
+     * @return $this
+     */
+    public function deleteInThread(PersistThread $persistThread): Model
+    {
+        $persistThread->pushDelete($this);
 
         return $this;
     }
@@ -612,12 +655,12 @@ class Model implements \JsonSerializable {
      * Get validator
      * @return AbstractValidator
      */
-    public function getValidator()
+    public function getValidator(): AbstractValidator | null
     {
         // If not set only
-        if($this->validator === null) {
+        if(empty($this->validator)) {
             // Get class
-            $validatorClass = $this->getDao()->getValidator();
+            $validatorClass = $this->getDao()->getValidatorClass($this);
             
             // If null => nothing to validate
             if ($validatorClass == null) {
@@ -643,9 +686,9 @@ class Model implements \JsonSerializable {
      * Backup values of model (also metadata)
      * @param bool $deeply
      * @param bool $dry
-     * @return mixed
+     * @return \stdClass
      */
-    public function backup($deeply = false, $dry = false)
+    public function backup($deeply = false, $dry = false): \stdClass
     {
         // save object
         $json = json_encode($this->toArray(false));
@@ -681,10 +724,10 @@ class Model implements \JsonSerializable {
 
     /**
      * Get backup
-     * @return null
+     * @return \stdClass
      * @throws ModelException
      */
-    public function getBackup()
+    public function getBackup(): \stdClass
     {
         if(!is_object($this->backup)) {
             throw new ModelException("No backup to get");
@@ -699,7 +742,7 @@ class Model implements \JsonSerializable {
      * @return $this
      * @throws ModelException
      */
-    public function setBackup($backup)
+    public function setBackup($backup): Model
     {
         if(!($backup instanceof \stdClass)) {
             throw new ModelException("Backup data must be in stdClass");
@@ -715,7 +758,7 @@ class Model implements \JsonSerializable {
      * @return bool
      * @throws ModelException
      */
-    public function modifiedSinceBackup()
+    public function modifiedSinceBackup(): bool
     {
         if(!isset($this->backup)) {
             throw new ModelException("Backup is not set");

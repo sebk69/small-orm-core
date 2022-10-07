@@ -22,13 +22,12 @@ class Field
     const TYPE_TIMESTAMP = "TYPE_TIMESTAMP";
     const TYPE_JSON = "TYPE_JSON";
 
-    protected $dbName;
-    protected $modelName;
-    protected $type = "TYPE_STRING";
-    protected $format = null;
+    protected string $dbName;
+    protected string $modelName;
+    protected string $type = "TYPE_STRING";
+    protected mixed $format = null;
 
     /**
-     *
      * @param string $dbName
      * @param string $modelName
      */
@@ -39,28 +38,31 @@ class Field
     }
 
     /**
+     * Get field name in db format
      * @return string
      */
-    public function getDbName()
+    public function getDbName(): string
     {
         return "`".$this->dbName."`";
     }
 
     /**
+     * Get field name in model format
      * @return string
      */
-    public function getModelName()
+    public function getModelName(): string
     {
         return $this->modelName;
     }
 
     /**
      * Set type
-     * @param $type
-     * @param null $format
+     * @param string $type
+     * @param mixed|null $format
+     * @return $this
      * @throws \Exception
      */
-    public function setType($type, $format = null)
+    public function setType(string $type, mixed $format = null): Field
     {
         switch($type) {
             case static::TYPE_STRING:
@@ -144,22 +146,24 @@ class Field
         }
 
         $this->type = $type;
+        
+        return $this;
     }
 
     /**
      * Get type
      * @return string
      */
-    public function getType()
+    public function getType(): string
     {
         return $this->type;
     }
 
     /**
      * Get format
-     * @return null|array|string
+     * @return mixed
      */
-    public function getFormat()
+    public function getFormat(): mixed
     {
         return $this->format;
     }
