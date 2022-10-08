@@ -133,7 +133,7 @@ class ModelCollection implements \IteratorAggregate, \ArrayAccess, \JsonSerializ
      * Get iterator
      * @return \Traversable
      */
-    function getIterator(): \Traversable
+    public function getIterator(): \Traversable
     {
         return new \ArrayIterator($this->objects);
     }
@@ -142,8 +142,37 @@ class ModelCollection implements \IteratorAggregate, \ArrayAccess, \JsonSerializ
      * Count number of objects in collection
      * @return int
      */
-    function count(): int
+    public function count(): int
     {
         return count($this->objects);
     }
+
+    /**
+     * Persist all collection
+     * @return $this
+     */
+    public function persist(): ModelCollection
+    {
+        foreach ($this->objects as $object) {
+            $object->persist();
+        }
+
+        return $this;
+    }
+
+    /**
+     * Delete all collection
+     * @return $this
+     */
+    public function delete(): ModelCollection
+    {
+        foreach ($this->objects as $object) {
+            $object->delete();
+        }
+
+        $this->objects = [];
+
+        return $this;
+    }
+
 }

@@ -3,7 +3,7 @@
   "licence": "GPL-3.0-only",
   "type": "library",
   "autoload": {
-    "psr-4": { "Sebk\\SmallOrmCore\\": "" }
+    "psr-4": { "Sebk\\SmallOrmCore\\": "src" }
   },
   "authors": [
     {
