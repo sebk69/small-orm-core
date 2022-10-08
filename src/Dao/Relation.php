@@ -21,13 +21,12 @@ class Relation
      * @param Dao $daoFactory
      * @param string $alias
      */
-    public function __construct(protected string $daoClass, protected array $keys,
-                                protected Dao $daoFactory, protected string $alias)
-    {
-        $this->daoFactory  = $daoFactory;
-        $this->keys        = $relationKeys;
-        $this->alias       = $alias;
-    }
+    public function __construct(
+        protected string $daoClass,
+        protected array $keys,
+        protected Dao $daoFactory,
+        protected string $alias
+    ) {}
 
     /**
      * Get dao
