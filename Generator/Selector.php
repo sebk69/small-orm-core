@@ -8,16 +8,46 @@
 
 namespace Sebk\SmallOrmCore\Generator;
 
+use Sebk\SmallOrmCore\Generator\Bean\AbstractPhpFile;
+use Sebk\SmallOrmCore\Generator\Bean\DaoFile;
+
 class Selector
 {
 
+    protected string | null $connectionName = null;
+    protected string $tables = '';
     protected array $daoConfig;
     protected array $modelConfig;
 
     public function __construct(array $folders, array $selectorConfig)
     {
-        $this->daoConfig = $this->createConfig($folders, $selectorConfig['dao_namespace']);
-        $this->modelConfig = $this->createConfig($folders, $selectorConfig['model_namespace']);
+        if (array_key_exists("selection", $selectorConfig) && array_key_exists("connection", $selectorConfig["selection"])) {
+            $this->connectionName = $selectorConfig["selection"]["connection"];
+        }
+        if (array_key_exists("selection", $selectorConfig) && array_key_exists("name", $selectorConfig["selection"])) {
+            $this->tables = $selectorConfig["selection"]["name"];
+        }
+        $this->daoConfig = $this->createConfig($folders, $selectorConfig["dao_namespace"]);
+        $this->modelConfig = $this->createConfig($folders, $selectorConfig["model_namespace"]);
+    }
+
+    /**
+     * Return selection connection name
+     * @return string
+     */
+    public function getConnection(): string | null
+    {
+        return $this->connectionName;
+    }
+
+    /**
+     * Return true if table in selection
+     * @param string $table
+     * @return bool
+     */
+    public function isTableInSelection(string $table): bool
+    {
+        return preg_match("/" . $this->tables . "/", $table) > 0;
     }
 
     /**

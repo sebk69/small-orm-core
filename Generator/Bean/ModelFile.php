@@ -50,21 +50,25 @@ class [modelName] extends Model
         // To one relations
         $hasToOne = false;
         foreach ($this->dbGateway->getToOnes($this->table) as $toOne) {
-            if (!$hasToOne) {
-                $getters .= "\n    // To one relations getters";
-                $hasToOne = true;
+            if (file_exists($this->selector->getDaoFolder() . "/" . $this->getClassnameForTable($toOne["toTable"]) . ".php")) {
+                if (!$hasToOne) {
+                    $getters .= "\n    // To one relations getters";
+                    $hasToOne = true;
+                }
+                $getters .= $this->toOneOrManyGetter($toOne["toTable"], $fields);
             }
-            $getters .= $this->toOneOrManyGetter($toOne["toTable"], $fields);
         }
 
         // To many relations
         $hasToMany = false;
         foreach ($this->dbGateway->getToManys($this->table) as $toMany) {
-            if (!$hasToMany) {
-                $getters .= "\n    // To many relations getters";
-                $hasToOne = true;
+            if (file_exists($this->selector->getDaoFolder() . "/" . $this->getClassnameForTable($toMany["toTable"]) . ".php")) {
+                if (!$hasToMany) {
+                    $getters .= "\n    // To many relations getters";
+                    $hasToOne = true;
+                }
+                $getters .= $this->toOneOrManyGetter($toMany["toTable"], $fields, true);
             }
-            $getters .= $this->toOneOrManyGetter($toMany["toTable"], $fields, true);
         }
 
         return $getters;
@@ -81,8 +85,10 @@ class [modelName] extends Model
         $description = $this->dbGateway->getDescription($this->table);
 
         $setters = "// Fields setters";
+        $fields = [];
         foreach ($description as $record) {
             if($record["Key"] != "PRI") {
+                $fields[] = ucfirst(static::getDaoFieldname($record["Field"]));
                 $setters .= $this->fieldSetter($record["Field"], $this->getPhpType($record));
             }
         }
@@ -90,11 +96,30 @@ class [modelName] extends Model
         // To one relations
         $hasToOne = false;
         foreach ($this->dbGateway->getToOnes($this->table) as $toOne) {
-            if (!$hasToOne) {
-                $setters .= "\n    // To one relations setters";
-                $hasToOne = true;
+            if (file_exists($this->selector->getDaoFolder() . "/" . $this->getClassnameForTable($toOne["toTable"]) . ".php")) {
+                if (!$hasToOne) {
+                    $setters .= "\n    // To one relations setters";
+                    $hasToOne = true;
+                }
+                if (in_array($this->getClassnameForTable($toOne["toTable"]), $fields)) {
+                    $setter = $this->getClassnameForTable($toOne["toTable"]) . "Relation";
+                } else {
+                    $setter = $this->getClassnameForTable($toOne["toTable"]);
+                }
+                $setters .= $this->toOneSetter($toOne["toTable"], $setter);
             }
-            $setters .= $this->fieldSetter($toOne["toTable"], $this->getClassName($toOne["toTable"]));
+        }
+
+        // To many relations
+        $hasToMany = false;
+        foreach ($this->dbGateway->getToManys($this->table) as $toMany) {
+            if (file_exists($this->selector->getDaoFolder() . "/" . $this->getClassnameForTable($toMany["toTable"]) . ".php")) {
+                if (!$hasToMany) {
+                    $setters .= "\n    // To many relations setters";
+                    $hasToMany = true;
+                }
+                $setters .= $this->addToCollection($this->getClassnameForTable($toMany["toTable"]));
+            }
         }
 
         return $setters;
@@ -134,11 +159,35 @@ class [modelName] extends Model
     ";
     }
 
+    /**
+     * @param string $fieldName
+     * @param $type
+     * @return string
+     */
+    public function toOneSetter(string $table, string $setter): string
+    {
+        $type = $this->getClassnameForTable($table);
+
+        return "
+    /**
+     * @param $type $" . lcfirst($this->getClassnameForTable($table)) . "
+     * @return \$this
+     */
+    public function set$setter($type $" . lcfirst($this->getClassnameForTable($table)) . ")
+    {
+        parent::set$setter($" . lcfirst($this->getClassnameForTable($table)) . ");
+        
+        return \$this;
+    }
+    ";
+    }
+
     public function toOneOrManyGetter(string $fieldname, array $fields, $pluralize = false): string
     {
-        $method = in_array(lcfirst(static::pluralize($this->getClassnameForTable($fieldname))), $fields)
-            ? $this->getClassnameForTable($fieldname) . 'Relation'
-            : $this->getClassnameForTable($fieldname);
+        $baseMethod = $pluralize ? lcfirst(static::pluralize($this->getClassnameForTable($fieldname))) : lcfirst($this->getClassnameForTable($fieldname));
+        $method = in_array($baseMethod, $fields)
+            ? $this->getClassnameForTable($fieldname, $pluralize) . 'Relation'
+            : $this->getClassnameForTable($fieldname, $pluralize);
 
         return "
     /**
@@ -167,16 +216,18 @@ class [modelName] extends Model
     ";
     }
 
-    public function addToCollection(string $fieldName, $class): string
+    public function addToCollection(string $class): string
     {
         return "
     /**
-     * @param $class $" . static::getDaoFieldname($fieldName) . "
+     * @param $class $" . lcfirst($class) . "
      * @return \$this
      */
-    public function add" . static::getDaoFieldname($fieldName) . "($class $" . static::getDaoFieldname($fieldName) . ")
+    public function add" . $class . "($class $" . lcfirst($class) . ")
     {
-        parent::set" . static::getDaoFieldname($fieldName, true) . "($" . static::getDaoFieldname($fieldName) . ");
+        \$collection = parent::get" . self::pluralize($class) . "();
+        \$collection[] = $" . lcfirst($class) . ";
+        parent::set" . self::pluralize($class) . "($" . lcfirst($class) . ");
         
         return \$this;
     }";

@@ -2,6 +2,7 @@
 
 namespace Sebk\SmallOrmCore\Generator\Bean;
 
+use Plural\Plural;
 use Sebk\SmallOrmCore\Dao\Field;
 use Sebk\SmallOrmCore\Generator\DbGateway;
 use Sebk\SmallOrmCore\Generator\Selector;
@@ -41,6 +42,7 @@ class AbstractPhpFile
         if ($this->removeTableNamespace == null) {
             $this->removeTableNamespace = [];
         }
+        Plural::loadLanguage('en');
     }
 
     /**
@@ -76,15 +78,7 @@ class AbstractPhpFile
      * @return string
      */
     protected static function pluralize(string $singular): string {
-        $last_letter = strtolower($singular[strlen($singular)-1]);
-        switch($last_letter) {
-            case 'y':
-                return substr($singular,0,-1).'ies';
-            case 's':
-                return $singular.'es';
-            default:
-                return $singular.'s';
-        }
+        return Plural::pluralize($singular);
     }
 
     /**
@@ -149,7 +143,7 @@ class AbstractPhpFile
         return $this->getClassnameForTable($this->table);
     }
 
-    public function getClassnameForTable($table)
+    public function getClassnameForTable($table, $pluralize = false)
     {
         foreach ($this->removeTableNamespace as $namespace) {
             if(substr($table, 0, strlen($namespace)) == $namespace) {
@@ -157,7 +151,7 @@ class AbstractPhpFile
             }
         }
 
-        return static::camelize($table);
+        return static::camelize($table, false, $pluralize);
     }
 
     /**

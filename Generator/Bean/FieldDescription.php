@@ -79,7 +79,7 @@ class FieldDescription
                 break;
 
             default:
-                $default = '"'.$record["Default"].'"';
+                $default = '"'.$this->fieldDescription["Default"].'"';
         }
 
         return $default;

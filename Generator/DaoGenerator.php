@@ -68,6 +68,18 @@ class DaoGenerator
         return $this;
     }
 
+    public function createDaoFile(string $dbTableName)
+    {
+        $daoFile = new DaoFile(
+            $dbTableName,
+            $this->selector,
+            $this->selectors,
+            $this->config["remove_tables_namespaces"],
+            $this->dbGateway
+        );
+        $daoFile->putFileContent($daoFile->getFileContent());
+    }
+
     /**
      * recompute files for a table
      */

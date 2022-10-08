@@ -56,6 +56,7 @@ class [daoName] extends AbstractDao
 ";
 
         // Fields
+        $fields = [];
         foreach ($description as $record) {
             // Get field description
             $description = new FieldDescription($record);
@@ -65,6 +66,7 @@ class [daoName] extends AbstractDao
 
             // Set field builder
             $dbFieldName = $description->getFieldName();
+            $fields[] = static::camelize($dbFieldName, true);
             if($record["Key"] != "PRI") {
                 $output .= "            ->addField('" .
                     $dbFieldName . "', '" .
@@ -80,8 +82,13 @@ class [daoName] extends AbstractDao
 
         // To one relations
         foreach ($this->dbGateway->getToOnes($this->table) as $toOne) {
+            if (in_array(lcfirst(static::getClassnameForTable($toOne["toTable"])), $fields)) {
+                $toOneField = lcfirst(static::getClassnameForTable($toOne["toTable"])) . "Relation";
+            } else {
+                $toOneField = lcfirst(static::getClassnameForTable($toOne["toTable"]));
+            }
             try {
-                $output .= "            ->addToOne('" . lcfirst(static::getClassnameForTable($toOne["toTable"])) .
+                $output .= "            ->addToOne('" . $toOneField .
                     "', ['" . static::getDaoFieldname($toOne["toField"]) . "' => '" .
                     static::getDaoFieldname($toOne["fromField"]) . "'], \\" .
                     static::getNamepaceForTable($toOne["toTable"]). "\\" . $this->getClassnameForTable($toOne["toTable"]) . "::class)\n";
@@ -92,11 +99,16 @@ class [daoName] extends AbstractDao
 
         // To many relations
         foreach ($this->dbGateway->getToManys($this->table) as $toMany) {
+            if (in_array(lcfirst(static::getClassnameForTable($toMany["toTable"])), $fields)) {
+                $toManyField = lcfirst(static::getClassnameForTable($toMany["toTable"])) . "Relation";
+            } else {
+                $toManyField = lcfirst(static::getClassnameForTable($toMany["toTable"]));
+            }
             try {
-                $output .= "            ->addToMany('" . static::pluralize(lcfirst($this->getClassnameForTable($toMany["toTable"]))) .
+                $output .= "            ->addToMany('" . static::pluralize($toManyField) .
                     "', ['" . static::getDaoFieldname($toMany["toField"]) . "' => '" .
                     static::getDaoFieldname($toMany["fromField"]). "'], \\" .
-                    static::getNamepaceForTable($toOne["toTable"]) . "\\" . $this->getClassnameForTable($toMany["toTable"]) . "::class)\n";
+                    static::getNamepaceForTable($toMany["toTable"]) . "\\" . $this->getClassnameForTable($toMany["toTable"]) . "::class)\n";
             } catch(TableNotFoundException $e) {}
         }
 
