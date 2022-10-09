@@ -9,6 +9,7 @@
 namespace Sebk\SmallOrmCore\Dao;
 
 use Psr\Container\ContainerInterface;
+use Sebk\SmallOrmCore\Contracts\QueryBuilderInterface;
 use Sebk\SmallOrmCore\Database\AbstractConnection;
 use Sebk\SmallOrmCore\Factory\Connections;
 use Sebk\SmallOrmCore\Factory\Dao;
@@ -299,7 +300,7 @@ abstract class AbstractDao {
      * @param string | null $alias
      * @return QueryBuilder
      */
-    public function createQueryBuilder(string $alias = null): QueryBuilder {
+    public function createQueryBuilder(string $alias = null): QueryBuilderInterface {
         return new QueryBuilder($this, $alias);
     }
 
@@ -326,7 +327,7 @@ abstract class AbstractDao {
      * @param QueryBuilder $query
      * @return array
      */
-    public function getRawResult(QueryBuilder $query): array {
+    public function getRawResult(QueryBuilderInterface $query): array {
         return $this->connection->execute($query->getSql(), $query->getParameters());
     }
 
@@ -402,7 +403,7 @@ abstract class AbstractDao {
      * @return Model[] | ModelCollection
      * @throws \Sebk\SmallOrmCore\QueryBuilder\QueryBuilderException
      */
-    public function getResult(QueryBuilder $query, $asCollection = true): array | ModelCollection {
+    public function getResult(QueryBuilderInterface $query, bool $asCollection = true): array | ModelCollection {
         foreach ($this->primaryKeys as $key) {
             $query->addOrderBy($key->getModelName());
         }
@@ -424,7 +425,7 @@ abstract class AbstractDao {
      * @throws \Sebk\SmallOrmCore\Database\ConnectionException
      * @throws \Sebk\SmallOrmCore\QueryBuilder\QueryBuilderException
      */
-    public function executeUpdate(UpdateBuilder $query, bool $executeModelMethods = true): AbstractDao {
+    public function executeUpdate(QueryBuilderInterface $query, bool $executeModelMethods = true): AbstractDao {
         $model = $this->newModel();
         if(!method_exists($model, "beforeSave") && !method_exists($model, "afterSave")) {
             $executeModelMethods = false;
@@ -456,7 +457,7 @@ abstract class AbstractDao {
      * @throws \Sebk\SmallOrmCore\Database\ConnectionException
      * @throws \Sebk\SmallOrmCore\QueryBuilder\QueryBuilderException
      */
-    public function executeDelete(DeleteBuilder $query, bool $executeModelMethods = true): AbstractDao {
+    public function executeDelete(QueryBuilderInterface $query, bool $executeModelMethods = true): AbstractDao {
         $model = $this->newModel();
         if(!method_exists($model, "beforeDelete") && !method_exists($model, "afterDelete")) {
             $executeModelMethods = false;
@@ -483,7 +484,7 @@ abstract class AbstractDao {
      * @param string $alias
      * @return array
      */
-    protected function buildResult(QueryBuilder $query, array $records, string $alias = null, bool $asCollection = true, bool $groupByModels = false): array | ModelCollection {
+    protected function buildResult(QueryBuilderInterface $query, array $records, string $alias = null, bool $asCollection = true, bool $groupByModels = false): array | ModelCollection {
         if ($alias === null) {
             $alias = $query->getRelation()->getAlias();
         }

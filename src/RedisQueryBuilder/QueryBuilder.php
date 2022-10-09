@@ -8,10 +8,11 @@
 
 namespace Sebk\SmallOrmCore\RedisQueryBuilder;
 
+use Sebk\SmallOrmCore\Contracts\QueryBuilderInterface;
 use Sebk\SmallOrmCore\Dao\AbstractRedisDao;
 use Sebk\SmallOrmCore\Dao\Model;
 
-class QueryBuilder
+class QueryBuilder implements QueryBuilderInterface
 {
 
     /**
@@ -64,7 +65,7 @@ class QueryBuilder
      * @return $this
      * @throws \Exception
      */
-    public function get($key)
+    public function get($key, $addTableName = true)
     {
         // Check syntax
         if ($this->instruction != null && $this->instruction != "get") {
@@ -74,12 +75,14 @@ class QueryBuilder
         // Set instruction for connection object
         $this->instruction = "get";
 
-        if ($key != "") {
+        if ($key != "" && $addTableName) {
             // If no key append key to dbTableName
             $fullkey = $this->dao->getDbTableName(false) . ":" . $key;
-        } else {
+        } elseif ($addTableName) {
             // else get dbTableName as key
             $fullkey = $this->dao->getDbTableName(false);
+        } else {
+            $fullkey = $key;
         }
 
         // Set parameter
@@ -142,13 +145,39 @@ class QueryBuilder
         
         if ($key != "") {
             // If no key append key to dbTableName
-            $fullkey = $this->dao->getDbTableName() . ":" . $key;
+            $fullkey = $this->dao->getDbTableName(false) . ":" . $key;
         } else {
             // else get dbTableName as key
-            $fullkey = $this->dao->getDbTableName();
+            $fullkey = $this->dao->getDbTableName(false);
         }
         $this->params["key"][] = $fullkey;
         
+        return $this;
+    }
+
+    /**
+     * Remove a key
+     * @param string $key
+     * @return $this
+     * @throws \Exception
+     */
+    public function keys(string $search)
+    {
+        // Check syntax
+        if ($this->instruction != null && $this->instruction != "keys") {
+            throw new \Exception("You can't use differents instructions in a same query !");
+        }
+
+        $this->instruction = "keys";
+        if ($search != "") {
+            // If no key append key to dbTableName
+            $fullkey = $this->dao->getDbTableName(false) . ":" . $search;
+        } else {
+            // else get dbTableName as key
+            $fullkey = $this->dao->getDbTableName(false);
+        }
+        $this->params["key"][] = $fullkey;
+
         return $this;
     }
 

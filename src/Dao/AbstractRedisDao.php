@@ -8,6 +8,8 @@
 
 namespace Sebk\SmallOrmCore\Dao;
 
+use MyProject\Proxies\__CG__\stdClass;
+use Sebk\SmallOrmCore\Contracts\QueryBuilderInterface;
 use Sebk\SmallOrmCore\Database\AbstractConnection;
 use Sebk\SmallOrmCore\RedisQueryBuilder\QueryBuilder;
 
@@ -29,7 +31,7 @@ abstract class AbstractRedisDao extends AbstractDao
      * @param string|null $alias
      * @return QueryBuilder
      */
-    public function createQueryBuilder(string $alias = null): QueryBuilder {
+    public function createQueryBuilder(string $alias = null): QueryBuilderInterface {
         return new QueryBuilder($this);
     }
 
@@ -53,22 +55,22 @@ abstract class AbstractRedisDao extends AbstractDao
 
     /**
      * Get raw result of a query
-     * @param QueryBuilder $query
+     * @param QueryBuilderInterface $query
      * @return array
      * @throws \Sebk\SmallOrmCore\Database\ConnectionException
      */
-    public function getRawResult(QueryBuilder $query): array
+    public function getRawResult(QueryBuilderInterface $query): array
     {
         return $this->connection->execute($query->getInstruction(), $query->getParams());
     }
 
     /**
      * Get result for a query
-     * @param QueryBuilder $query
+     * @param QueryBuilderInterface $query
      * @param bool $asCollection
      * @return Model[] | ModelCollection
      */
-    public function getResult(QueryBuilder $query, bool $asCollection = true): ModelCollection | array {
+    public function getResult(QueryBuilderInterface $query, bool $asCollection = true): ModelCollection | array {
         $records = $this->getRawResult($query);
 
         if ($records == null) {
@@ -77,8 +79,14 @@ abstract class AbstractRedisDao extends AbstractDao
 
         $result = [];
         foreach ($records as $record) {
-            if ($record!= null) {
-                $model = $this->makeModelFromStdClass($record);
+            if ($record != null) {
+                if ($record instanceof stdClass) {
+                    $model = $this->makeModelFromStdClass($record);
+                } elseif (is_array($record)) {
+                    $model = $this->makeModelFromStdClass(json_decode(json_encode($record)));
+                } else {
+                    throw new \Exception("Invalid result");
+                }
 
                 if (method_exists($model, "onLoad")) {
                     $model->onLoad();
@@ -102,7 +110,7 @@ abstract class AbstractRedisDao extends AbstractDao
      * @return AbstractDao
      * @throws \Exception
      */
-    public function executeUpdate(QueryBuilder $query, bool $executeModelMethods = true): AbstractDao
+    public function executeUpdate(QueryBuilderInterface $query, bool $executeModelMethods = true): AbstractDao
     {
         throw new \Exception("No mass update for redis connector !");
     }
@@ -114,7 +122,7 @@ abstract class AbstractRedisDao extends AbstractDao
      * @return AbstractDao|AbstractRedisDao
      * @throws \Exception
      */
-    public function executeDelete(QueryBuilder $query, bool $executeModelMethods = true)
+    public function executeDelete(QueryBuilderInterface $query, bool $executeModelMethods = true): AbstractRedisDao
     {
         throw new \Exception("No mass delete for redis connector !");
     }
@@ -129,7 +137,7 @@ abstract class AbstractRedisDao extends AbstractDao
      * @return array|ModelCollection
      * @throws \Exception
      */
-    public function buildResult(QueryBuilder $query, array $records, string $alias = null, bool $asCollection = false, bool $groupByModels = false)
+    public function buildResult(QueryBuilderInterface $query, array $records, string $alias = null, bool $asCollection = false, bool $groupByModels = false): ModelCollection | array
     {
         throw new \Exception("buildResult not available for redis connector !");
     }
@@ -203,14 +211,14 @@ abstract class AbstractRedisDao extends AbstractDao
      * @return Model
      * @throws DaoEmptyException
      */
-    public function findOneBy(string $conds = "", array $dependenciesAliases = []): Model
+    public function findOneBy(array $conds = [], array $dependenciesAliases = []): Model
     {
-        if (is_array($conds)) {
+        if (count($conds) > 1) {
             throw new \Exception("Can't use multiples keys for findOneBy");
         }
-        
+
         $query = $this->createQueryBuilder();
-        $query->get($conds);
+        $query->get($conds[0]);
         
         $result = $this->getResult($query);
         
@@ -228,18 +236,23 @@ abstract class AbstractRedisDao extends AbstractDao
      * @return ModelCollection|array
      * @throws \Exception
      */
-    public function findBy(array|string $conds, array $dependenciesAliases = []): ModelCollection | array
+    public function findBy(array $conds, array $dependenciesAliases = []): ModelCollection
     {
         $query = $this->createQueryBuilder();
 
-        if (is_array($conds)) {
-            foreach ($conds as $cond) {
-                $query->get($cond);
+        foreach ($conds as $cond) {
+            if (strstr($cond, "*")) {
+                $sub = ($this->createQueryBuilder())
+                    ->keys($cond);
+                foreach ($this->getRawResult($sub) as $key) {
+                    $query->get($key, false);
+                }
             }
-        } else {
-            $query->get($conds);
+
+
+            $query->get($cond);
         }
-        
+
         return $this->getResult($query);
     }
 }

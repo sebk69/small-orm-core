@@ -8,12 +8,13 @@
 
 namespace Sebk\SmallOrmCore\QueryBuilder;
 
+use Sebk\SmallOrmCore\Contracts\QueryBuilderInterface;
 use Sebk\SmallOrmCore\Dao\AbstractDao;
 
 /**
  * Sql query builder
  */
-class QueryBuilder {
+class QueryBuilder implements QueryBuilderInterface {
 
     protected $from;
     protected $joins = array();
