@@ -28,7 +28,7 @@ abstract class AbstractDao {
 
     protected Dao $daoFactory;
     protected ContainerInterface $container;
-    protected string $validatorClass;
+    protected string | null $validatorClass = null;
     private string $modelClass;
     private string | null $collectionClass = null;
     private string $dbTableName;
@@ -929,7 +929,6 @@ abstract class AbstractDao {
         }
 
         list($sql, $parms) = $this->getDeleteSql($model);
-
         if (method_exists($model, "beforeDelete")) {
             $model->beforeDelete();
         }
@@ -1127,7 +1126,7 @@ abstract class AbstractDao {
      * Get validator class
      * @return string
      */
-    public function getValidatorClass(): string
+    public function getValidatorClass(): string | null
     {
         return $this->validatorClass;
     }
