@@ -9,6 +9,7 @@
 namespace Sebk\SmallOrmCore\Dao;
 
 use Psr\Container\ContainerInterface;
+use Sebk\SmallOrmCore\Factory\Dao;
 use Sebk\SmallOrmCore\Validator\AbstractValidator;
 
 /**
@@ -118,7 +119,7 @@ class Model implements \JsonSerializable {
                         case Field::TYPE_INT:
                             return (int)$this->fields[$name];
                         case Field::TYPE_JSON:
-                            return json_decode($this->fields[$name], $this->types[$name]["format"]);
+                            return is_string($this->fields[$name]) ? json_decode($this->fields[$name], $this->types[$name]["format"]) : $this->fields[$name];
                     }
                     return $this->fields[$name];
                 } elseif ($typeField == "toOne") {
@@ -660,7 +661,7 @@ class Model implements \JsonSerializable {
         // If not set only
         if(empty($this->validator)) {
             // Get class
-            $validatorClass = $this->getDao()->getValidatorClass($this);
+            $validatorClass = $this->getDao()->getValidatorClass($this->container->get(Dao::class), $this);
             
             // If null => nothing to validate
             if ($validatorClass == null) {
