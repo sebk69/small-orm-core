@@ -73,6 +73,9 @@ class Selector
                     }
                 }
 
+                // Create folder if not exists
+                mkdir(implode('/', $finalFolderParts), 0755, true);
+
                 // Return config
                 return [
                     'namespace' => $namespace,
