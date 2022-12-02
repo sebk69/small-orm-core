@@ -81,6 +81,30 @@ class Model implements \JsonSerializable {
     }
 
     /**
+     * Called when clone to clone subobjects
+     * @return void
+     * @throws ModelException
+     */
+    public function __clone()
+    {
+        // Create new model based on this
+        $stdClass = json_decode(json_encode($this->toArray()));
+        $clone = $this->getDao()->makeModelFromStdClass($stdClass);
+        // Reassign this subobjects
+        $this->primaryKeys = $clone->primaryKeys;
+        $this->originalPrimaryKeys = $clone->originalPrimaryKeys;
+        $this->fields = $clone->fields;
+        $this->types = $clone->types;
+        $this->toOnes = $clone->toOnes;
+        $this->toManys = $clone->toManys;
+        $this->fromDb = $clone->fromDb;
+        $this->altered = $clone->altered;
+        $this->backup = is_object($this->backup) ? clone $this->backup : $this->backup;
+        $this->validator = null;
+        $this->metadata = $clone->metadata;
+    }
+
+    /**
      * Magic method to access getters and setters
      * @param $method
      * @param $args
