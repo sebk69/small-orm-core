@@ -313,7 +313,7 @@ class Model implements \JsonSerializable {
      * Get original primary key
      * @return string
      */
-    public function getOriginalPrimaryKeys(): string
+    public function getOriginalPrimaryKeys(): array
     {
         return $this->originalPrimaryKeys;
     }
